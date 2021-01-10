@@ -1,18 +1,10 @@
 " Main driver file "
 import pygame as pg 
-import quoView as view
-import quoModel as model
+import quoController as controller 
 
 def main():
-    mainModel=model.GameState()
-    mainView=view.View(mainModel)
-    running=True
-
-    while running:
-        for e in pg.event.get():
-            if e.type==pg.QUIT:
-                running=False
-            mainView.render()
-
+    ctrl=controller.Controller()
+    ctrl.play()
+    
 if __name__=="__main__":
     main()

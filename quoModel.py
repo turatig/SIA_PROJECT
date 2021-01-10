@@ -9,98 +9,154 @@ __COLOR_CODE__={
 
 class Board():
 
-    def __init__(self):
+    def __init__(self,dim,pawnList):
         #wall slots
-        self._hwalls=[[0 for i in range(8)] for j in range(8)]
-        self._vwalls=[[0 for i in range(8)] for j in range(8)]
-        self._pawns=[Pawn("white",(0,4)),Pawn("black",(8,4))]
-        self._graph=GridGraph(9)
+        self._dim=dim
+        self._hwalls=[[0 for i in range(self._dim-1)] for j in range(self._dim-1)]
+        self._vwalls=[[0 for i in range(self._dim-1)] for j in range(self._dim-1)]
+        self._pawns=[p for p in pawnList]
+        self._turn=0
+        self._graph=GridGraph(self._dim)
     
     def getHorizontalWalls(self): return self._hwalls
     def getVerticalWalls(self): return self._vwalls
 
+    def getWall(self,slot,verse):
+        if verse=="horizontal":
+            return self._hwalls[slot[0]][slot[1]]
+        else:
+            return self._vwalls[slot[0]][slot[1]]
+
+    def isFree(self,wallSlot,verse):
+        res=False
+        i,j=wallSlot[0],wallSlot[1]
+        #tested slot must:
+        #-be surrounded by free slots
+        #-leave a way from every pawn to its goal
+        if(verse=="horizontal"):
+            around=[self._hwalls[i][j+k] for k in range(-1,2) if j+k>=0 and j+k<len(self._hwalls[i])]
+            around.append(self._vwalls[i][j])
+
+            if(len([i for i in around if i])==0):
+                self._graph.cutEdge((i,j),(i+1,j))
+                self._graph.cutEdge((i,j+1),(i+1,j+1))
+
+                if( all([self._graph.theresPath(p.getPosition(),p.getGoalRow()) for p in self.getPawns()]) ): 
+                    res=True
+
+                self._graph.insertEdge((i,j),(i+1,j))
+                self._graph.insertEdge((i,j+1),(i+1,j+1))
+
+        else:
+            around=[self._vwalls[i+k][j] for k in range(-1,2) if i+k>=0 and i+k<len(self._vwalls)]
+            around.append(self._hwalls[i][j])
+                
+            if(len([i for i in around if i])==0):
+                self._graph.cutEdge((i,j),(i,j+1))
+                self._graph.cutEdge((i+1,j),(i+1,j+1))
+
+                if( all([self._graph.theresPath(p.getPosition(),p.getGoalRow()) for p in self.getPawns()]) ): 
+                        res=True
+
+                self._graph.insertEdge((i,j),(i,j+1))
+                self._graph.insertEdge((i+1,j),(i+1,j+1))
+        return res
+
 
     def getFreeSlots(self):
         free={"horizontal":[],"vertical":[]}
+
         for i in range(len(self._hwalls)):
             for j in range(len(self._hwalls[i])):
-
-                #tested slot must:
-                #-be surrounded by free slots
-                #-leave a way from every pawn to its goal
-                #horizontal
-                around=[self._hwalls[i][j+k] for k in range(-1,2) if j+k>=0 and j+k<len(self._hwalls[i])]
-                around.append(self._vwalls[i][j])
-
-                if(len([i for i in around if i])==0):
-                    self._graph.cutEdge((i,j),(i+1,j))
-                    self._graph.cutEdge((i,j+1),(i+1,j+1))
-
-                    if( all([self._graph.depthFirst(p.getPosition(),p.getGoalRow()) for p in self.getPawns()]) ): 
-                        free["horizontal"].append((i,j))
-
-                    self._graph.insertEdge((i,j),(i+1,j))
-                    self._graph.insertEdge((i,j+1),(i+1,j+1))
-
-                #vertical
-                around=[self._vwalls[i+k][j] for k in range(-1,2) if i+k>=0 and i+k<len(self._vwalls)]
-                around.append(self._hwalls[i][j])
-                
-                if(len([i for i in around if i])==0):
-                    self._graph.cutEdge((i,j),(i,j+1))
-                    self._graph.cutEdge((i+1,j),(i+1,j+1))
-
-                    if( all([self._graph.depthFirst(p.getPosition(),p.getGoalRow()) for p in self.getPawns()]) ): 
-                        free["vertical"].append((i,j))
-
-                    self._graph.insertEdge((i,j),(i,j+1))
-                    self._graph.insertEdge((i+1,j),(i+1,j+1))
-
+                if(self.isFree((i,j),"horizontal")):
+                    free["horizontal"].append((i,j))
+                if(self.isFree((i,j),"vertical")):
+                    free["vertical"].append((i,j))
         return free
 
-    def insertHorizontalWall(self,pos,color):
+    def insertWall(self,pos,color,verse):
         i,j=pos[0],pos[1]
 
-        if(pos not in self.getFreeSlots()["horizontal"]): return False
+        if verse=="horizontal":
+            
+            if(not self.isFree((i,j),"horizontal") or not self.getPawnByColor(color).getWallsLeft()): 
+                return False
+            self._hwalls[i][j]=__COLOR_CODE__[color]
+            self._graph.cutEdge((i,j),(i+1,j))
+            self._graph.cutEdge((i,j+1),(i+1,j+1))
+            self.getPawnByColor(color).decrementWallsLeft()
 
-        self._hwalls[i][j]=__COLOR_CODE__[color]
-        self._graph.cutEdge((i,j),(i+1,j))
-        self._graph.cutEdge((i,j+1),(i+1,j+1))
-        self.getPawnByColor(color).decrementWallsLeft()
-
+        else:
+            
+            if(not self.isFree((i,j),"vertical") or not self.getPawnByColor(color).getWallsLeft()): 
+                return False
+            self._vwalls[pos[0]][pos[1]]=__COLOR_CODE__[color]
+            self._graph.cutEdge((i,j),(i,j+1))
+            self._graph.cutEdge((i+1,j),(i+1,j+1))
+            self.getPawnByColor(color).decrementWallsLeft()
+            
         return True
 
-    def insertVerticalWall(self,pos,color):
-        i,j=pos[0],pos[1]
-        if(pos not in self.getFreeSlots()["vertical"]): return False
+    def isValid(self,p):
+        return p[0]>=0 and p[0]<self._dim and p[1]>=0 and p[1]<self._dim
 
-        self._vwalls[pos[0]][pos[1]]=__COLOR_CODE__[color]
-        self._graph.cutEdge((i,j),(i,j+1))
-        self._graph.cutEdge((i+1,j),(i+1,j+1))
-        self.getPawnByColor(color).decrementWallsLeft()
+    #check whether the pawn can jump
+    def getPossibleJumps(self,pawn):
+        jumps=[]
+        pos=pawn.getPosition()
+        direction= 1 if pawn.getGoalRow()>pos[0] else -1
+        pos=(pos[0]+direction,pos[1])
 
-        return True
+        if len([t for t in self._pawns if t.getColor()!=pawn.getColor() and t.getPosition()==pos])==0:
+            return jumps
+
+        if self._graph.areNeighbours(pos,(pos[0]+direction,pos[1])):
+            jumps.append((pos[0]+direction,pos[1]))
+        else:
+            if self._graph.areNeighbours(pos,(pos[0],pos[1]+1)):
+                jumps.append((pos[0],pos[1]+1))
+            if self._graph.areNeighbours(pos,(pos[0],pos[1]-1)):
+                jumps.append((pos[0],pos[1]-1))
+
+        return jumps
+
+    def getPossibleNextMoves(self):
+        pawn=self._pawns[self._turn]
+        color=pawn.getColor()
+        pos=pawn.getPosition()
+        moves=[(-1,0),(1,0),(0,-1),(0,1)]
+
+        free=list(filter(lambda p:len([t for t in self._pawns if t.getColor()!=color and t.getPosition()==p])==0,\
+                        filter(lambda p: self._graph.areNeighbours(p,pos),\
+                            filter(lambda p:self.isValid(p),\
+                                map(lambda p:(pos[0]+p[0],pos[1]+p[1]),moves)))))
+    
+        return free+self.getPossibleJumps(pawn)
+        
 
     def getPawns(self): return self._pawns
+    def getMovingPawn(self): return self._pawns[self._turn]
 
     def getPawnByColor(self,color):
         for p in self.getPawns():
             if p.getColor()==color:
                 return p
+
+    def switchTurn(self):
+        self._turn=(self._turn+1)%len(self._pawns)
+
+    def checkWinner(self):
+        return [p for p in self._pawns if p.getPosition()[0]==p.getGoalRow()]
         
 
 class Pawn():
 
-    __GOAL_ROWS__={
-        (0,4):8,
-        (8,4):0
-    }
-    def __init__(self,color,startPos):
+    def __init__(self,color,startPos,goalRow,wallsLeft=10):
         self._color=color
         self._position=startPos
-        self._goalRow=Pawn.__GOAL_ROWS__[self._position]
+        self._goalRow=goalRow
         self._colorCode=__COLOR_CODE__[self._color]
-        self._wallsLeft=10
+        self._wallsLeft=wallsLeft
         
 
     def setPosition(self,newPos): self._position=newPos
@@ -111,21 +167,3 @@ class Pawn():
     def decrementWallsLeft(self): 
         if(self._wallsLeft>0):
             self._wallsLeft-=1
-
-class GameState():
-
-    def __init__(self):
-        self._board=Board()
-        self.getPawnByColor("black").setPosition((8,8))
-        self._board.insertHorizontalWall((7,7),"white")
-        self._board.insertVerticalWall((7,6),"black")
-
-        self._turn=1
-
-    def getBoard(self): return self._board
-    def getTurn(self): return self._turn
-    def getPawns(self):return self._board.getPawns()
-    def getPawnByColor(self,color):
-        for p in self._board.getPawns():
-            if p.getColor()==color:
-                return p

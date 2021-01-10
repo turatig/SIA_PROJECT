@@ -25,9 +25,12 @@ class GridGraph():
         self._adjDict[sq2].append(sq1)
 
     def areNeighbours(self,sq1,sq2):
-        return sq2 in self._adjDict[sq1]
+        try:
+            return sq2 in self._adjDict[sq1]
+        except KeyError as e:
+            return False
 
-    def depthFirst(self,src,toRow):
+    def theresPath(self,src,toRow):
 
         visited=set()
         visited.add(src)
@@ -41,5 +44,23 @@ class GridGraph():
                         res=search(n)
                         if res: return True
                 return False
+
+        return search(src)
+
+    def shortestPath(self,src,toRow):
+        visited=set()
+        visited.add(src)
+
+        def search(src):
+            if src[0]==toRow: return [src]
+            else:
+                minPath=[]
+                for n in self._adjDict[src]:
+                    if n not in visited:
+                        visited.add(n)
+                        res=search(n)
+                        if not minPath or len(minPath)>len(res): minPath=res
+                visited.remove(src)
+                return [src]+minPath
 
         return search(src)
