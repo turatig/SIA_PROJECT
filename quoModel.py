@@ -33,33 +33,27 @@ class Board():
         #tested slot must:
         #-be surrounded by free slots
         #-leave a way from every pawn to its goal
-        if(verse=="horizontal"):
-            around=[self._hwalls[i][j+k] for k in range(-1,2) if j+k>=0 and j+k<len(self._hwalls[i])]
-            around.append(self._vwalls[i][j])
+        walls=[self._hwalls,self._vwalls] if verse=="horizontal" else [self._vwalls,self._hwalls]
 
-            if(len([i for i in around if i])==0):
-                self._graph.cutEdge((i,j),(i+1,j))
-                self._graph.cutEdge((i,j+1),(i+1,j+1))
+        around= list(map(lambda k: walls[0][i][j+k],\
+                        filter(lambda k: j+k>=0 and k>len(walls[0]),\
+                            range(-1,2)))) + [walls[1][i][j]]
 
-                if( all([self._graph.theresPath(p.getPosition(),p.getGoalRow()) for p in self.getPawns()]) ): 
-                    res=True
+        print(around)
 
-                self._graph.insertEdge((i,j),(i+1,j))
-                self._graph.insertEdge((i,j+1),(i+1,j+1))
+        if( not [i for i in around if i] ):
 
-        else:
-            around=[self._vwalls[i+k][j] for k in range(-1,2) if i+k>=0 and i+k<len(self._vwalls)]
-            around.append(self._hwalls[i][j])
-                
-            if(len([i for i in around if i])==0):
-                self._graph.cutEdge((i,j),(i,j+1))
-                self._graph.cutEdge((i+1,j),(i+1,j+1))
+            r= (i+1,j) if verse=="horizontal" else (i,j+1)
+            l= (i,j+1) if verse=="horizontal" else (i+1,j)
+            self._graph.cutEdge((i,j),r)
+            self._graph.cutEdge(l,(i+1,j+1))
 
-                if( all([self._graph.theresPath(p.getPosition(),p.getGoalRow()) for p in self.getPawns()]) ): 
-                        res=True
+            if( all([self._graph.theresPath(p.getPosition(),p.getGoalRow()) for p in self.getPawns()]) ): 
+                res=True
 
-                self._graph.insertEdge((i,j),(i,j+1))
-                self._graph.insertEdge((i+1,j),(i+1,j+1))
+            self._graph.insertEdge((i,j),r)
+            self._graph.insertEdge(l,(i+1,j+1))
+
         return res
 
 
@@ -76,24 +70,17 @@ class Board():
 
     def insertWall(self,pos,color,verse):
         i,j=pos[0],pos[1]
-
-        if verse=="horizontal":
             
-            if(not self.isFree((i,j),"horizontal") or not self.getPawnByColor(color).getWallsLeft()): 
-                return False
-            self._hwalls[i][j]=__COLOR_CODE__[color]
-            self._graph.cutEdge((i,j),(i+1,j))
-            self._graph.cutEdge((i,j+1),(i+1,j+1))
-            self.getPawnByColor(color).decrementWallsLeft()
+        if(not self.isFree((i,j),verse) or not self.getPawnByColor(color).getWallsLeft()): 
+            return False
 
-        else:
-            
-            if(not self.isFree((i,j),"vertical") or not self.getPawnByColor(color).getWallsLeft()): 
-                return False
-            self._vwalls[pos[0]][pos[1]]=__COLOR_CODE__[color]
-            self._graph.cutEdge((i,j),(i,j+1))
-            self._graph.cutEdge((i+1,j),(i+1,j+1))
-            self.getPawnByColor(color).decrementWallsLeft()
+        r= (i+1,j) if verse=="horizontal" else (i,j+1)
+        l= (i,j+1) if verse=="horizontal" else (i+1,j)
+
+        self._hwalls[i][j]=__COLOR_CODE__[color]
+        self._graph.cutEdge((i,j),r)
+        self._graph.cutEdge(l,(i+1,j+1))
+        self.getPawnByColor(color).decrementWallsLeft()
             
         return True
 
@@ -126,7 +113,7 @@ class Board():
         pos=pawn.getPosition()
         moves=[(-1,0),(1,0),(0,-1),(0,1)]
 
-        free=list(filter(lambda p:len([t for t in self._pawns if t.getColor()!=color and t.getPosition()==p])==0,\
+        free=list(filter(lambda p: p not in [pawn.getPosition() for pawn in self._pawns],\
                         filter(lambda p: self._graph.areNeighbours(p,pos),\
                             filter(lambda p:self.isValid(p),\
                                 map(lambda p:(pos[0]+p[0],pos[1]+p[1]),moves)))))
