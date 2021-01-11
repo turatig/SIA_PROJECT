@@ -30,19 +30,17 @@ class Board():
     def isFree(self,wallSlot,verse):
         res=False
         i,j=wallSlot[0],wallSlot[1]
+
         #tested slot must:
-        #-be surrounded by free slots
-        #-leave a way from every pawn to its goal
         walls=[self._hwalls,self._vwalls] if verse=="horizontal" else [self._vwalls,self._hwalls]
 
+        #-be surrounded by free slots
         around= list(map(lambda k: walls[0][i][j+k],\
-                        filter(lambda k: j+k>=0 and k>len(walls[0]),\
+                        filter(lambda k: j+k>=0 and j+k<len(walls[0]),\
                             range(-1,2)))) + [walls[1][i][j]]
+        if(not [i for i in around if i]):
 
-        print(around)
-
-        if( not [i for i in around if i] ):
-
+            #-leave a way from every pawn to its goal
             r= (i+1,j) if verse=="horizontal" else (i,j+1)
             l= (i,j+1) if verse=="horizontal" else (i+1,j)
             self._graph.cutEdge((i,j),r)
@@ -108,26 +106,42 @@ class Board():
         return jumps
 
     def getPossibleNextMoves(self):
-        pawn=self._pawns[self._turn]
-        color=pawn.getColor()
-        pos=pawn.getPosition()
-        moves=[(-1,0),(1,0),(0,-1),(0,1)]
+        pos=self.getMovingPawn().getPosition()
+        directions=[(-1,0),(1,0),(0,-1),(0,1)]
 
-        free=list(filter(lambda p: p not in [pawn.getPosition() for pawn in self._pawns],\
+        free=list(filter(lambda p: p!= self.getAdPawn().getPosition(),\
                         filter(lambda p: self._graph.areNeighbours(p,pos),\
                             filter(lambda p:self.isValid(p),\
-                                map(lambda p:(pos[0]+p[0],pos[1]+p[1]),moves)))))
+                                map(lambda d:(pos[0]+d[0],pos[1]+d[1]),directions)))))
     
-        return free+self.getPossibleJumps(pawn)
+        return free+self.getPossibleJumps(self.getMovingPawn())
         
 
     def getPawns(self): return self._pawns
     def getMovingPawn(self): return self._pawns[self._turn]
+    def getAdPawn(self): return self._pawns[(self._turn+1)%2]
 
     def getPawnByColor(self,color):
         for p in self.getPawns():
             if p.getColor()==color:
                 return p
+
+    #get the next free squares along all directions starting from p
+    def getFreeField(self,p,verse=True):
+        dirs=[i for i in range(4)]
+        
+
+    """def getAIEnv(self,color):
+        p=self.getPawnByColor(color)
+        ad=self.getPawns()[(self._turn+1)%2]
+        tstate=[0 for i in range(len(self.getPawns()))]
+
+        tstate[:2]=len(self._graph.,p.getPosition(),p.getGoalRow()),\
+                    len(self._graph.,ad.getPosition(),ad.getGoalRow())
+        tstate[3:5]=p.getWallsLeft(),ad.getWallsLeft()
+
+        tstate[6:14]="""
+
 
     def switchTurn(self):
         self._turn=(self._turn+1)%len(self._pawns)

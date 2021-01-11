@@ -40,3 +40,7 @@ class Controller():
                         running=False
 
             self._model.switchTurn()
+
+class Human():
+    def __init__(self):
+        
