@@ -32,17 +32,18 @@ class Board():
         i,j=wallSlot[0],wallSlot[1]
 
         #tested slot must:
-        walls=[self._hwalls,self._vwalls] if verse=="horizontal" else [self._vwalls,self._hwalls]
-
         #-be surrounded by free slots
-        around= list(map(lambda k: walls[0][i][j+k],\
-                        filter(lambda k: j+k>=0 and j+k<len(walls[0]),\
-                            range(-1,2)))) + [walls[1][i][j]]
+        if  verse=="horizontal":
+            around= [self._hwalls[i][j+k] for k in range(-1,2) if j+k>=0 and j+k<len(self._vwalls)]\
+                            + [self._vwalls[i][j]]
+        else:
+            around= [self._vwalls[i+k][j] for k in range(-1,2) if i+k>=0 and i+k<len(self._vwalls)]\
+                            + [self._hwalls[i][j]]
+
         if(not [i for i in around if i]):
 
             #-leave a way from every pawn to its goal
-            r= (i+1,j) if verse=="horizontal" else (i,j+1)
-            l= (i,j+1) if verse=="horizontal" else (i+1,j)
+            r,l= ((i+1,j),(i,j+1)) if verse=="horizontal" else ((i,j+1),(i+1,j))
             self._graph.cutEdge((i,j),r)
             self._graph.cutEdge(l,(i+1,j+1))
 
@@ -72,10 +73,10 @@ class Board():
         if(not self.isFree((i,j),verse) or not self.getPawnByColor(color).getWallsLeft()): 
             return False
 
-        r= (i+1,j) if verse=="horizontal" else (i,j+1)
-        l= (i,j+1) if verse=="horizontal" else (i+1,j)
+        r,l,walls= ((i+1,j),(i,j+1),self._hwalls) if verse=="horizontal" else \
+                    ((i,j+1),(i+1,j),self._vwalls)
 
-        self._hwalls[i][j]=__COLOR_CODE__[color]
+        walls[i][j]=__COLOR_CODE__[color]
         self._graph.cutEdge((i,j),r)
         self._graph.cutEdge(l,(i+1,j+1))
         self.getPawnByColor(color).decrementWallsLeft()
@@ -125,22 +126,6 @@ class Board():
         for p in self.getPawns():
             if p.getColor()==color:
                 return p
-
-    #get the next free squares along all directions starting from p
-    def getFreeField(self,p,verse=True):
-        dirs=[i for i in range(4)]
-        
-
-    """def getAIEnv(self,color):
-        p=self.getPawnByColor(color)
-        ad=self.getPawns()[(self._turn+1)%2]
-        tstate=[0 for i in range(len(self.getPawns()))]
-
-        tstate[:2]=len(self._graph.,p.getPosition(),p.getGoalRow()),\
-                    len(self._graph.,ad.getPosition(),ad.getGoalRow())
-        tstate[3:5]=p.getWallsLeft(),ad.getWallsLeft()
-
-        tstate[6:14]="""
 
 
     def switchTurn(self):

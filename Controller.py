@@ -1,6 +1,6 @@
 import pygame as pg 
-import quoModel as model
-import quoView as view
+import Model as model
+import View as view
 
 
 class Controller():
@@ -43,4 +43,4 @@ class Controller():
 
 class Human():
     def __init__(self):
-        
+        pass

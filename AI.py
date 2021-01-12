@@ -1,3 +1,4 @@
+from Model import Board,Pawn
 class AI():
 
     def __init__(self,controller):

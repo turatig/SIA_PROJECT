@@ -1,6 +1,6 @@
 " Main driver file "
 import pygame as pg 
-import quoController as controller 
+import Controller as controller 
 
 def main():
     ctrl=controller.Controller()
