@@ -20,6 +20,7 @@ class GridGraph():
     def cutEdge(self,sq1,sq2):
         self._adjDict[sq1].remove(sq2)
         self._adjDict[sq2].remove(sq1)
+
     def insertEdge(self,sq1,sq2):
         self._adjDict[sq1].append(sq2)
         self._adjDict[sq2].append(sq1)
@@ -52,7 +53,7 @@ class GridGraph():
         visited.add(src)
 
         def search(src):
-            if src[0]==toRow: return [src]
+            if src[0]==toRow: return []
             else:
                 minPath=[]
                 for n in self._adjDict[src]:

@@ -132,7 +132,10 @@ class Board():
         self._turn=(self._turn+1)%len(self._pawns)
 
     def checkWinner(self):
-        return [p for p in self._pawns if p.getPosition()[0]==p.getGoalRow()]
+        win=[p for p in self._pawns if p.getPosition()[0]==p.getGoalRow()]
+        if win:
+            return win[0]
+        else: return False
         
 
 class Pawn():

@@ -7,14 +7,33 @@ class Controller():
     def __init__(self):
         self._model=model.Board(5,[model.Pawn("white",(0,2),4,3),model.Pawn("black",(4,2),0,3)])
         self._view=view.View(self._model)
+        self._players=[Human(self._model,self._view),Human(self._model,self._view)]
 
     def play(self):
         running=True
-        while(running and not self._model.checkWinner()):
-
+        turn=0
+        while(not self._model.checkWinner()):
+            
             self._view.render()
-            moved=False
-            while(running and not moved):
+            p=self._players[turn]
+            res=p.takeAction()
+            if not res: 
+                break
+            turn=(turn+1)%len(self._players)
+            self._model.switchTurn()
+
+        print("ya")
+
+class Human():
+    def __init__(self,model,view):
+        self._model=model
+        self._view=view
+
+    def takeAction(self):
+        moved=False
+        running=True
+
+        while(running and not moved):
                 for e in pg.event.get():
 
                     if e.type==pg.MOUSEMOTION:
@@ -39,8 +58,4 @@ class Controller():
                     if e.type==pg.QUIT:
                         running=False
 
-            self._model.switchTurn()
-
-class Human():
-    def __init__(self):
-        pass
+        return running
