@@ -83,18 +83,35 @@ class Board():
             
         return True
 
+    def removeWall(self,pos,color,verse):
+        i,j=pos[0],pos[1]
+        if(self.isFree((i,j),verse)): 
+            return False
+
+        r,l,walls= ((i+1,j),(i,j+1),self._hwalls) if verse=="horizontal" else \
+                    ((i,j+1),(i+1,j),self._vwalls)
+
+        walls[i][j]=0
+        self._graph.insertEdge((i,j),r)
+        self._graph.insertEdge(l,(i+1,j+1))
+        self.getPawnByColor(color).incrementWallsLeft()
+
+        return True
+
+
     def isValid(self,p):
         return p[0]>=0 and p[0]<self._dim and p[1]>=0 and p[1]<self._dim
 
     #check whether the pawn can jump
-    def getPossibleJumps(self,pawn):
+    def getPossibleJumps(self):
         jumps=[]
-        pos=pawn.getPosition()
-        direction= 1 if pawn.getGoalRow()>pos[0] else -1
-        pos=(pos[0]+direction,pos[1])
+        pos=self.getMovingPawn().getPosition()
+        direction= 1 if self.getMovingPawn().getGoalRow()>pos[0] else -1
 
-        if len([t for t in self._pawns if t.getColor()!=pawn.getColor() and t.getPosition()==pos])==0:
+        if self.getAdPawn().getPosition()!=(pos[0]+direction,pos[1]) or \
+                not self._graph.areNeighbours(pos,(pos[0]+direction,pos[1])):
             return jumps
+        pos=(pos[0]+direction,pos[1])
 
         if self._graph.areNeighbours(pos,(pos[0]+direction,pos[1])):
             jumps.append((pos[0]+direction,pos[1]))
@@ -115,21 +132,29 @@ class Board():
                             filter(lambda p:self.isValid(p),\
                                 map(lambda d:(pos[0]+d[0],pos[1]+d[1]),directions)))))
     
-        return free+self.getPossibleJumps(self.getMovingPawn())
+        return free+self.getPossibleJumps()
         
 
     def getPawns(self): return self._pawns
     def getMovingPawn(self): return self._pawns[self._turn]
     def getAdPawn(self): return self._pawns[(self._turn+1)%2]
+    def movePawn(self,p):
+        if p in self.getPossibleNextMoves():
+            self.getMovingPawn().setPosition(p)
+            return True
+        return False
 
     def getPawnByColor(self,color):
         for p in self.getPawns():
             if p.getColor()==color:
                 return p
 
-
-    def switchTurn(self):
+    def getTurn(self):return self._turn
+    def incrementTurn(self):
         self._turn=(self._turn+1)%len(self._pawns)
+
+    def decrementTurn(self):
+        self._turn=self._turn-1 if self._turn>0 else len(self._pawns)-1
 
     def checkWinner(self):
         win=[p for p in self._pawns if p.getPosition()[0]==p.getGoalRow()]
@@ -142,10 +167,11 @@ class Pawn():
 
     def __init__(self,color,startPos,goalRow,wallsLeft=10):
         self._color=color
+        self._startPos=startPos
         self._position=startPos
         self._goalRow=goalRow
         self._colorCode=__COLOR_CODE__[self._color]
-        self._wallsLeft=wallsLeft
+        self._wallsLeft=self._maxWalls=wallsLeft
         
 
     def setPosition(self,newPos): self._position=newPos
@@ -153,6 +179,12 @@ class Pawn():
     def getColor(self): return self._color
     def getGoalRow(self): return self._goalRow
     def getWallsLeft(self): return self._wallsLeft
+    def isWinner(self): return self.getPosition()[0]==self.getGoalRow()
     def decrementWallsLeft(self): 
         if(self._wallsLeft>0):
             self._wallsLeft-=1
+    def incrementWallsLeft(self):
+        self._wallsLeft+=1
+    def reset(self):
+        self._wallsLeft=self._maxWalls
+        self.setPosition(self._startPos)

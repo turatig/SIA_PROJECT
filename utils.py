@@ -50,18 +50,19 @@ class GridGraph():
 
     def shortestPath(self,src,toRow):
         visited=set()
-        visited.add(src)
-
-        def search(src):
-            if src[0]==toRow: return []
+        
+        def search(node):
+            if node[0]==toRow: return [node]
             else:
+                visited.add(node)
                 minPath=[]
-                for n in self._adjDict[src]:
+                for n in self._adjDict[node]:
                     if n not in visited:
-                        visited.add(n)
                         res=search(n)
-                        if not minPath or len(minPath)>len(res): minPath=res
-                visited.remove(src)
-                return [src]+minPath
+                        if res and (not minPath or len(minPath)>=len(res)): 
+                            minPath=res
+                            
+                visited.remove(node)
+                return [node]+minPath if minPath else []
 
         return search(src)

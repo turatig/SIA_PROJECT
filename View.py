@@ -212,13 +212,16 @@ class View():
         pg.display.set_caption("Quoridor")
         pg.font.init()
         self._font=pg.font.SysFont("Courier New",20)
+        self.undo_button=pg.Rect(20,20,10,10)
 
     def render(self):
+        #print("Rendering view...")
         self._screen.fill(pg.Color("white"))
         self._board.render()
         for p in self._pawns:
             p.render()
         self.renderWallsLeft()
+        #pg.draw.rect(self._screen,pg.Color("Red"),self.undo_button)
         self._clock.tick(self._maxFps)
         pg.display.flip()
 
@@ -229,6 +232,8 @@ class View():
         self._screen.blit(b,(150,self._board._ht+60))
 
     def getBoard(self):return self._board
+        
+        
 
 
 
