@@ -5,11 +5,8 @@ from AI import RLAgent
 
 def main():
     ctrl=controller.Controller()
-    """agent=RLAgent(ctrl._model)
+    agent=RLAgent(ctrl._model,with_trace=True)
     win_rate=ctrl.train(agent)
-    players=[agent,controller.Human(ctrl._model,ctrl._view)]
-    ctrl.play(players)"""
-    ctrl.play()
     
 if __name__=="__main__":
     main()

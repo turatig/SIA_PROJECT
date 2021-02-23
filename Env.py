@@ -61,6 +61,7 @@ class Env(Board):
     def update(self,action,breakp=False):
         pos=self.getMovingPawn().getPosition()
         decoder={
+            #N.B: action code must be ("m",(ROW_INCREMENT,COL_INCREMENT))
             "m":lambda a: self.movePawn((pos[0]+a[0],pos[1]+a[1])),
             "h":lambda a: self.insertWall(a,self.getMovingPawn().getColor(),"horizontal"),
             "v":lambda a: self.insertWall(a,self.getMovingPawn().getColor(),"vertical")
@@ -77,6 +78,7 @@ class Env(Board):
                 print(self._cache)
             self.incrementTurn()
             return True
+
         return False
     
     def undo(self,breakp=False):
@@ -111,6 +113,18 @@ class Env(Board):
         for p in self._pawns:
             p.reset()
 
+    def getHeuristic(self):
+        p1=self.getMovingPawn()
+        p2=self.getAdPawn()
+        
+        if self.isTerminal():
+            if p1.isWinner(): return 1000
+            else: return -1000
+        else:
+            #Compute difference of shortest paths heuristics
+            return len(self._graph.shortestPath(p2.getPosition(),p2.getGoalRow()))-\
+                        len(self._graph.shortestPath(p1.getPosition(),p1.getGoalRow()))
+    
     def getReward(self):
         p1=self.getMovingPawn()
         p2=self.getAdPawn()
@@ -122,7 +136,6 @@ class Env(Board):
             #Compute difference of shortest paths heuristics
             return len(self._graph.shortestPath(p2.getPosition(),p2.getGoalRow()))-\
                         len(self._graph.shortestPath(p1.getPosition(),p1.getGoalRow()))
-
 
 
 

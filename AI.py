@@ -4,7 +4,7 @@ import math
 
 class RLAgent():
 
-    def __init__(self,env,v=False):
+    def __init__(self,env,with_trace=False,v=False):
 
         self._env=env
         # Keys: state_tuple
@@ -12,10 +12,17 @@ class RLAgent():
         self._qtable=dict()
         self._gamma=0.25
         self._alpha=0.8
+        
         #Policy is epsilon-greedy on the value function
         self._epsilon=0.1
         # Action=None and state=None indicates the initial state
         self._prev_act=self._prev_state=None
+
+        # if the agent is created with the trace, these fields
+        # manage update of previous seen states during the episode
+        self._with_trace=with_trace
+        self._lambda=0.5
+        self._elegibility_trace=dict()
         #Verbose mode
         self._v=v
 
@@ -51,10 +58,17 @@ class RLAgent():
         if suboptimal and uniform(0,1)<self._epsilon:
             #Choose with uniform probability among suboptimal actions
             a=suboptimal[int(uniform(0,0.99)*len(suboptimal))]
+            #If suboptimal action was chosen, stop the propagation
+            if self._with_trace:
+                for state_action in self._elegibility_trace.keys():
+                    self._elegibility_trace[state_action]=0
+
         else:
             #Choose with uniform probability among greedy (respect to the value function) actions
             a=greedy[int(uniform(0,0.99)*len(greedy))]
 
+        if self._with_trace:
+            self._elegibility_trace[(state,a)]=1
         self._env.update(a)
         self._prev_state=state
         self._prev_act=a
@@ -64,14 +78,12 @@ class RLAgent():
 
         if self._env.isTerminal():
             target=self._env.getReward()
-            self._qtable[self._prev_state][self._prev_act]+=\
-                    self._alpha*(target-self._qtable[self._prev_state][self._prev_act])
+            self._update(target)
             if self._v:
                 print("-"*20+" FINAL UPDATE "+"-"*20)
                 print(self._qtable[self._prev_state][self._prev_act])
             #Reset at the end of an episode
-            self._prev_state=None
-            self._prev_act=None
+            self.startEpisode()
 
         #If state is not terminal
         else:
@@ -88,7 +100,9 @@ class RLAgent():
                 if a not in explored:
                     self._qtable[new_state][a]=0
 
-            #If not at the start of the episode
+            #If not at the start of the episode, update the previous state-action
+            #value function given the observed reward and best action selectable 
+            #in the new state
             if self._prev_state:
                 if self._v:
                     print("***********************")
@@ -96,9 +110,27 @@ class RLAgent():
                 #Select maximum value function between valid actions
                 qa_max=max([v for a,v in self._qtable[new_state].items() if a in valid])
                 target=self._env.getReward()+self._gamma*qa_max
-                #Update qtable of the previous seen state
-                self._qtable[self._prev_state][self._prev_act]+=\
-                    self._alpha*(target-self._qtable[self._prev_state][self._prev_act])
+                
+                self._update(target)
+
+                
+    def _update(self,target):
+
+        delta=(target-self._qtable[self._prev_state][self._prev_act])
+
+        if self._with_trace:
+            #_prev_state and _prev_act will be in this dict
+            for st_act in self._elegibility_trace.keys():
+                self._qtable[st_act[0]][st_act[1]]+=\
+                    self._alpha*delta*self._elegibility_trace[st_act]
+
+                self._elegibility_trace[st_act]=\
+                    self._elegibility_trace[st_act]*self._gamma*self._lambda
+        else:
+            self._qtable[self._prev_state][self._prev_act]+=self._alpha*delta
+
+    def startEpisode(self):
+        self._elegibility_trace=dict()
 
 
 
@@ -113,7 +145,7 @@ class NegamaxAgent():
         #Return tuple (heuristic_value,move) for negamax algorithm
         def negaMax(depth):
             if self._env.isTerminal() or not depth:
-                return (self._env.getReward(),None)
+                return (self._env.getHeuristic(),None)
             else:
                 max_value=(-math.inf,None)
     
@@ -130,4 +162,38 @@ class NegamaxAgent():
                 return max_value
 
         self._env.update(negaMax(self._depth)[1])
-        return True
+
+#The dummy agent 0 moves only the pawn in the direction of the shortest
+#path
+class DummyAgent0():
+    def __init__(self,env):
+        self._env=env
+
+    def takeAction(self):
+        p=self._env.getMovingPawn()
+        #Take a step along the shortest path direction
+        next_pos=self._env._graph.shortestPath(p.getPosition(),p.getGoalRow())[1]
+        valid=self._env.getPossibleNextMoves()
+
+        #If the square is busy (there's adversarial pawn on it)
+        if next_pos not in valid:
+            next_pos=valid[int(uniform(0,0.99)*len(valid))]
+        
+        p=p.getPosition()
+        self._env.update(("m",(next_pos[0]-p[0],next_pos[1]-p[1])))
+
+#The dummy agent 1 waste all walls at the beginning of the match
+#then behaves as dummy agent 0.
+#Walls are placed evaluating the board heuristic
+class DummyAgent1():
+    def __init__(self,env):
+        self._env=env
+    def takeAction(self):
+        p=self._env.getMovingPawn()
+
+        if p.getWallsLeft():
+            free_slots=self._env.getFreeSlots()
+            best_slot=(None,math.inf)
+            for slot in free_slots["horizontal"]:
+                self._env.update(("h",slot))
+                self._env.getHeuristic()

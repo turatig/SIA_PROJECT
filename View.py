@@ -10,20 +10,21 @@ class Square():
         self._model=model
         self._idx=idx
         self._highlight=False
+        self._rect=pg.Rect(self._loset,self._toset,self._wd,self._ht)
 
     def render(self):
 
         if self._idx in self._model.getPossibleNextMoves():
 
             if self._highlight:
-                pg.draw.rect(self._screen,pg.Color("yellow"),pg.Rect(self._loset,self._toset,self._wd,self._ht))
+                pg.draw.rect(self._screen,pg.Color("yellow"),self._rect)
             else:
-                pg.draw.rect(self._screen,pg.Color("gray"),pg.Rect(self._loset,self._toset,self._wd,self._ht))
+                pg.draw.rect(self._screen,pg.Color("gray"),self._rect)
         else:
-            pg.draw.rect(self._screen,pg.Color("gray"),pg.Rect(self._loset,self._toset,self._wd,self._ht),width=self._border)
+            pg.draw.rect(self._screen,pg.Color("gray"),self._rect,width=self._border)
     
     def clear(self):
-        pg.draw.rect(self._screen,pg.Color("white"),pg.Rect(self._loset,self._toset,self._wd,self._ht))
+        pg.draw.rect(self._screen,pg.Color("white"),self._rect)
 
     def getToset(self): return self._toset
     def getLoset(self): return self._loset
@@ -46,6 +47,7 @@ class Wall():
         self._model=model
         self._idx=index
         self._highlight=False
+        self._rect=pg.Rect(self._loset,self._toset,self._wd,self._ht)
 
     def highlight(self):self._highlight=True
     def turnoff(self):self._highlight=False
@@ -59,14 +61,14 @@ class Wall():
     def render(self):
 
         if self._model.getWall(self._idx,self._verse)==1:
-            pg.draw.rect(self._screen,pg.Color("black"),pg.Rect(self._loset,self._toset,self._wd,self._ht),width=3,border_radius=2)
+            pg.draw.rect(self._screen,pg.Color("black"),self._rect,width=3,border_radius=2)
         elif self._model.getWall(self._idx,self._verse)==2:
-            pg.draw.rect(self._screen,pg.Color("black"),pg.Rect(self._loset,self._toset,self._wd,self._ht),border_radius=2)
+            pg.draw.rect(self._screen,pg.Color("black"),self._rect,border_radius=2)
         elif self._model.isFree(self._idx,self._verse) and self._highlight:
-            pg.draw.rect(self._screen,pg.Color("yellow"),pg.Rect(self._loset,self._toset,self._wd,self._ht),border_radius=2)
+            pg.draw.rect(self._screen,pg.Color("yellow"),self._rect,border_radius=2)
 
     def clear(self):
-        pg.draw.rect(self._screen,pg.Color("white"),pg.Rect(self._loset,self._toset,self._wd,self._ht),border_radius=2)
+        pg.draw.rect(self._screen,pg.Color("white"),self._rect,border_radius=2)
 
 class Pawn():
     __SQUARE_MAP__=[]
@@ -165,20 +167,17 @@ class Board():
     def getElementByPos(self,p):
         for row in self._squares:
             for sq in row:
-                if p[0]>=sq.getLoset() and p[0]<=sq.getLoset()+sq.getSize()\
-                    and p[1]>=sq.getToset() and p[1]<=sq.getToset()+sq.getSize():
+                if sq._rect.collidepoint(p):
                     return sq
 
         for v in self._vwalls:
             for w in v:
-                if p[0]>=w.getLoset() and p[0]<=w.getLoset()+w.getWidth()\
-                    and p[1]>=w.getToset() and p[1]<=w.getToset()+self._squares[0][0].getSize():
+                if w._rect.collidepoint(p):
                     return w
         
         for v in self._hwalls:
             for w in v:
-                if p[0]>=w.getLoset() and p[0]<=w.getLoset()+self._squares[0][0].getSize()\
-                    and p[1]>=w.getToset() and p[1]<=w.getToset()+w.getHeight():
+                if w._rect.collidepoint(p):
                     return w
 
         return False
@@ -211,7 +210,7 @@ class View():
         self._clock=pg.time.Clock()
         pg.display.set_caption("Quoridor")
         pg.font.init()
-        self._font=pg.font.SysFont("Courier New",20)
+        self._font=pg.font.Font("cour.ttf",20)
         self.undo_button=pg.Rect(20,20,10,10)
 
     def render(self):

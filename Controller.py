@@ -2,7 +2,7 @@ import pygame as pg
 import Model as model
 import Env as env
 import View as view
-from AI import RLAgent,NegamaxAgent
+from AI import RLAgent,NegamaxAgent,DummyAgent0
 import time
 
 
@@ -10,27 +10,35 @@ class Controller():
     def __init__(self):
         self._model=env.Env(5,[model.Pawn("white",(0,2),4,3),model.Pawn("black",(4,2),0,3)])
         self._view=view.View(self._model)
-        self._players=[Human(self._model,self._view),NegamaxAgent(self._model)]
+        self._players=[RLAgent(self._model,with_trace=True),NegamaxAgent(self._model)]
+        self._running=False
 
-    def play(self,players=None):
+
+    def quit(self): self._running=False
+
+    def game_loop(self,players=None):
+        
+        turn_count=0
         if players!=None:
             self._players=[p for p in players]
+        self._running=True
 
-        running=True
-        while running:
-            while(not self._model.checkWinner()):
-            
+        print(self._players)
+
+        while self._running:
+            while not self._model.checkWinner() and self._running:
+
                 self._view.render()
-                start=time.time()
-                res=self._players[self._model.getTurn()].takeAction()
-                end=time.time()
-                time.sleep(2)
-                """print("Player {0} moved in {1}".\
-                        format(self._players[self._model.getTurn()],end-start))"""
-                if not res:
-                    running=False 
-                    break
-            if running:
+                self._players[self._model.getTurn()].takeAction()
+
+                if type(self._players[self._model.getTurn()])!=Human:
+                    for e in pg.event.get():
+                        if e.type==pg.QUIT:
+                            self._running=False
+                
+                turn_count=turn_count+1
+
+            if self._running:
                 winner=self._model.checkWinner().getColor()
                 for p in self._players:
                     if type(p)==RLAgent:
@@ -39,18 +47,25 @@ class Controller():
                             self._model.incrementTurn()
                         p.update()
                 self._model.reset()
+                return winner,turn_count
+        return False
+            
 
     #Train an RLAgent
     def train(self,RLplayer,color="white",n_match=200):
         win_count,lose_count=1,1
         #Win rate:[win_count/lose_count] at the iteration number i
         win_rate=[]
-        players=[RLplayer,NegamaxAgent(self._model)]
+        players=[RLplayer,DummyAgent0(self._model)]
         if color!="white":
             players=players[::-1]
         for i in range(n_match):
-            winner=self.play(players)
-            print("{0} player won match number {1}".format(winner,i+1))
+            res=self.game_loop(players)
+            #The game was quitted, during the train
+            if not res:
+                return False
+            winner,turn_count=res
+            print("{0} player won match number {1} in {2} turns".format(winner,i+1,turn_count))
             if winner==color:
                 win_count+=1
             else:
@@ -61,9 +76,10 @@ class Controller():
 
 
 class Human():
-    def __init__(self,model,view):
+    def __init__(self,model,view,controller):
         self._model=model
         self._view=view
+        self._game_controller=controller
 
     def takeAction(self):
         moved=False
@@ -99,6 +115,6 @@ class Human():
 
 
                     if e.type==pg.QUIT:
+                        self._game_controller.quit()
                         running=False
-
-        return running
+                        pg.event.clear()
