@@ -8,7 +8,7 @@ import time
 
 class Controller():
     def __init__(self):
-        self._model=env.Env(9,[model.Pawn("white",(0,2),4,3),model.Pawn("black",(4,2),0,3)])
+        self._model=env.Env(5,[model.Pawn("white",(0,2),4,3),model.Pawn("black",(4,2),0,3)])
         self._view=view.View(self._model)
         self._players=[Human(self._model,self._view,self),Human(self._model,self._view,self)]
         self._running=False

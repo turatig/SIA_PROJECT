@@ -113,6 +113,7 @@ class Board():
             return jumps
         pos=(pos[0]+direction,pos[1])
 
+        #If there's no wall behind the opponent
         if self._graph.areNeighbours(pos,(pos[0]+direction,pos[1])):
             jumps.append((pos[0]+direction,pos[1]))
         else:
@@ -127,11 +128,15 @@ class Board():
         pos=self.getMovingPawn().getPosition()
         directions=[(-1,0),(1,0),(0,-1),(0,1)]
 
+        #Possible next positions are filtered according to following rules:
+        #1-Must be in the range [0,dim-1]
+        #2-Must be reachable from moving pawn current position
+        #3-Must be empty
         free=list(filter(lambda p: p!= self.getAdPawn().getPosition(),\
                         filter(lambda p: self._graph.areNeighbours(p,pos),\
                             filter(lambda p:self.isValid(p),\
                                 map(lambda d:(pos[0]+d[0],pos[1]+d[1]),directions)))))
-    
+
         return free+self.getPossibleJumps()
         
 

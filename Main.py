@@ -1,7 +1,7 @@
 " Main driver file "
 import pygame as pg 
 import Controller as controller
-from AI import RLAgent,DummyAgent0,DummyAgent1
+from AI import RLAgent,DummyAgent0,DummyAgent1,NegamaxAgent
 import matplotlib.pyplot as plt
 
 def main():
@@ -27,6 +27,6 @@ def plotWinRate(win_rate,agent_str):
     ax.plot([i for i in range(len(win_rate))],win_rate)
 
 if __name__=="__main__":
-    #main()
-    ctrl=controller.Controller()
-    ctrl.game_loop()
+    main()
+    """ctrl=controller.Controller()
+    ctrl.game_loop()"""
