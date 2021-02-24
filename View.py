@@ -94,14 +94,14 @@ class Pawn():
 
 class Board():
 
-    def __init__(self,model,screen,topOffset,leftOffset):
+    def __init__(self,model,screen,topOffset,leftOffset,sqSize,border):
         self._model=model
         self._screen=screen
         self._toset=topOffset
         self._loset=leftOffset
         self._dim=self._model._dim
-        self._sqSize=50
-        self._border=10
+        self._sqSize=sqSize
+        self._border=border
         self._wd=self._sqSize*self._dim+self._border*(self._dim+1)
         self._ht=self._wd
         self._squares=[]
@@ -202,7 +202,12 @@ class View():
         self._screen=pg.display.set_mode((self._screenWd,self._screenHt))
         self._screen.fill(pg.Color("white"))
 
-        self._board=Board(self._model,self._screen,50,150)
+        sqSize=50
+        border=10
+        board_side=sqSize*self._model._dim+border*(self._model._dim+1)
+        board_loset=(self._screenWd-board_side)/2
+        board_toset=(self._screenHt-board_side)/2
+        self._board=Board(self._model,self._screen,board_toset,board_loset,sqSize,border)
         Pawn.setSquareMap(self._board.getSquaresMap())
         self._pawns=[Pawn(self._screen,p,16) for p in self._model.getPawns()]
 
@@ -227,8 +232,8 @@ class View():
     def renderWallsLeft(self):
         w=self._font.render("White player: {0} walls left".format(self._model.getPawnByColor("white").getWallsLeft()),1,"black")
         b=self._font.render("Black player: {0} walls left".format(self._model.getPawnByColor("black").getWallsLeft()),1,"black")
-        self._screen.blit(w,(150,20))
-        self._screen.blit(b,(150,self._board._ht+60))
+        self._screen.blit(w,(self._board._loset,self._board._toset-30))
+        self._screen.blit(b,(self._board._loset,self._board._toset+self._board._ht+10))
 
     def getBoard(self):return self._board
         

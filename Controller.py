@@ -8,9 +8,9 @@ import time
 
 class Controller():
     def __init__(self):
-        self._model=env.Env(5,[model.Pawn("white",(0,2),4,3),model.Pawn("black",(4,2),0,3)])
+        self._model=env.Env(9,[model.Pawn("white",(0,2),4,3),model.Pawn("black",(4,2),0,3)])
         self._view=view.View(self._model)
-        self._players=[RLAgent(self._model,with_trace=True),NegamaxAgent(self._model)]
+        self._players=[Human(self._model,self._view,self),Human(self._model,self._view,self)]
         self._running=False
 
 
@@ -22,8 +22,6 @@ class Controller():
         if players!=None:
             self._players=[p for p in players]
         self._running=True
-
-        print(self._players)
 
         while self._running:
             while not self._model.checkWinner() and self._running:
@@ -52,11 +50,11 @@ class Controller():
             
 
     #Train an RLAgent
-    def train(self,RLplayer,color="white",n_match=200):
+    def train(self,RLplayer,adPlayer,color="white",n_match=200):
         win_count,lose_count=1,1
         #Win rate:[win_count/lose_count] at the iteration number i
         win_rate=[]
-        players=[RLplayer,DummyAgent0(self._model)]
+        players=[RLplayer,adPlayer]
         if color!="white":
             players=players[::-1]
         for i in range(n_match):

@@ -185,15 +185,29 @@ class DummyAgent0():
 #The dummy agent 1 waste all walls at the beginning of the match
 #then behaves as dummy agent 0.
 #Walls are placed evaluating the board heuristic
-class DummyAgent1():
+class DummyAgent1(DummyAgent0):
     def __init__(self,env):
         self._env=env
+
     def takeAction(self):
         p=self._env.getMovingPawn()
 
         if p.getWallsLeft():
             free_slots=self._env.getFreeSlots()
             best_slot=(None,math.inf)
-            for slot in free_slots["horizontal"]:
-                self._env.update(("h",slot))
-                self._env.getHeuristic()
+            #free_slots["horizontal"],free_slots["vertical"]
+            for k in free_slots.keys():
+                for slot in free_slots[k]:
+                    self._env.update((k[0],slot))
+                    #The lower the better in this case (is evaluated during the adversarial turn)
+                    val=self._env.getHeuristic()
+                    if val<best_slot[1]:
+                        best_slot=((k[0],slot),val)
+                    elif val==best_slot[1]:
+                        if uniform(0,0.99)<0.5:
+                            best_slot=((k[0],slot),val)
+                    self._env.undo()
+            self._env.update(best_slot[0])
+        else:
+            super().takeAction()
+
