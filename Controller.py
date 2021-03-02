@@ -10,7 +10,7 @@ class Controller():
     def __init__(self):
         self._model=env.Env(5,[model.Pawn("white",(0,2),4,3),model.Pawn("black",(4,2),0,3)])
         self._view=view.View(self._model)
-        self._players=[Human(self._model,self._view,self),Human(self._model,self._view,self)]
+        self._players=[Human(self),Human(self)]
         self._running=False
 
 
@@ -74,9 +74,9 @@ class Controller():
 
 
 class Human():
-    def __init__(self,model,view,controller):
-        self._model=model
-        self._view=view
+    def __init__(self,controller):
+        self._model=controller._model
+        self._view=controller._view
         self._game_controller=controller
 
     def takeAction(self):

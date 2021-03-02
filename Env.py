@@ -95,7 +95,6 @@ class Env(Board):
             print("Undoing action {0}".format(self._cache[-1]))
             input()
         self.decrementTurn()
-        pos=self.getMovingPawn().getPosition()
         decoder[self._cache[-1][0]](self._cache[-1][1])
         self._cache.pop()
 
@@ -136,6 +135,8 @@ class Env(Board):
             #Compute difference of shortest paths heuristics
             return len(self._graph.shortestPath(p2.getPosition(),p2.getGoalRow()))-\
                         len(self._graph.shortestPath(p1.getPosition(),p1.getGoalRow()))
+
+
 
 
 

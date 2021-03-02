@@ -19,6 +19,8 @@ def main():
 
     plt.show()
 
+    ctrl.game_loop([Human(ctrl),agent])
+
 def plotWinRate(win_rate,agent_str):
     fig,ax=plt.subplots(1)
     ax.set_title("Win rate against "+agent_str)

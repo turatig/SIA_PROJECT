@@ -168,6 +168,7 @@ class NegamaxAgent():
 class DummyAgent0():
     def __init__(self,env):
         self._env=env
+        self._epsilon=0.1
 
     def takeAction(self):
         p=self._env.getMovingPawn()
@@ -175,8 +176,9 @@ class DummyAgent0():
         next_pos=self._env._graph.shortestPath(p.getPosition(),p.getGoalRow())[1]
         valid=self._env.getPossibleNextMoves()
 
-        #If the square is busy (there's adversarial pawn on it)
-        if next_pos not in valid:
+        #If the square is busy (there's opponent pawn on it) or with probability
+        #epsilon
+        if next_pos not in valid or uniform(0,0.99)<self._epsilon:
             next_pos=valid[int(uniform(0,0.99)*len(valid))]
         
         p=p.getPosition()
@@ -188,6 +190,7 @@ class DummyAgent0():
 class DummyAgent1(DummyAgent0):
     def __init__(self,env):
         self._env=env
+        self._epsilon=0.1
 
     def takeAction(self):
         p=self._env.getMovingPawn()

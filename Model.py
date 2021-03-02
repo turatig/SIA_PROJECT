@@ -106,22 +106,20 @@ class Board():
     def getPossibleJumps(self):
         jumps=[]
         pos=self.getMovingPawn().getPosition()
-        direction= 1 if self.getMovingPawn().getGoalRow()>pos[0] else -1
-
-        if self.getAdPawn().getPosition()!=(pos[0]+direction,pos[1]) or \
-                not self._graph.areNeighbours(pos,(pos[0]+direction,pos[1])):
-            return jumps
-        pos=(pos[0]+direction,pos[1])
-
-        #If there's no wall behind the opponent
-        if self._graph.areNeighbours(pos,(pos[0]+direction,pos[1])):
-            jumps.append((pos[0]+direction,pos[1]))
-        else:
-            if self._graph.areNeighbours(pos,(pos[0],pos[1]+1)):
-                jumps.append((pos[0],pos[1]+1))
-            if self._graph.areNeighbours(pos,(pos[0],pos[1]-1)):
-                jumps.append((pos[0],pos[1]-1))
-
+        directions=[(1,0),(0,1),(-1,0),(0,-1)]
+        
+        for d in directions:
+            p=(pos[0]+d[0],pos[1]+d[1])
+            #If there's an opponent on the square
+            if self.getAdPawn().getPosition()==p:
+                #If there's no wall behind the opponent
+                if self._graph.areNeighbours(p,(p[0]+d[0],p[1]+d[1])):
+                    jumps.append((p[0]+d[0],p[1]+d[1]))
+                else:
+                    if self._graph.areNeighbours(p,(p[0]+d[1],p[1]+d[0])):
+                        jumps.append((p[0]+d[1],p[1]+d[0]))
+                    if self._graph.areNeighbours(p,(p[0]-d[1],p[1]-d[0])):
+                        jumps.append((p[0]-d[1],p[1]-d[0]))
         return jumps
 
     def getPossibleNextMoves(self):
