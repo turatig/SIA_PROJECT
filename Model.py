@@ -111,7 +111,7 @@ class Board():
         for d in directions:
             p=(pos[0]+d[0],pos[1]+d[1])
             #If there's an opponent on the square
-            if self.getAdPawn().getPosition()==p:
+            if self.getOpponentPawn().getPosition()==p:
                 #If there's no wall behind the opponent
                 if self._graph.areNeighbours(p,(p[0]+d[0],p[1]+d[1])):
                     jumps.append((p[0]+d[0],p[1]+d[1]))
@@ -130,17 +130,40 @@ class Board():
         #1-Must be in the range [0,dim-1]
         #2-Must be reachable from moving pawn current position
         #3-Must be empty
-        free=list(filter(lambda p: p!= self.getAdPawn().getPosition(),\
+        free=list(filter(lambda p: p!= self.getOpponentPawn().getPosition(),\
                         filter(lambda p: self._graph.areNeighbours(p,pos),\
                             filter(lambda p:self.isValid(p),\
                                 map(lambda d:(pos[0]+d[0],pos[1]+d[1]),directions)))))
 
         return free+self.getPossibleJumps()
+
+    #Get the number of free squares along any direction from the specified position
+    def getFreeWay(self,pawn):
+        pos=pawn.getPosition()
+        ways=[]
+        dirs=[(-1,0),(0,1),(0,-1),(1,0)]
+
+        for d in dirs:
+            #Move along all directions till it's possible and count the squares
+            for i in range(self._dim):
+                if(not self._graph.areNeighbours(\
+                        (pos[0]+d[0]*(i+1),pos[1]+d[1]*(i+1)),\
+                        (pos[0]+d[0]*(i),pos[1]+d[1]*i)\
+                )):
+                    ways.append(i)
+                    break
+
+        if pawn.getGoalRow()==self._dim-1:
+            ways[:2]=ways[1::-1]
+            ways[2:]=ways[3:1:-1]
+
+        return ways
+
         
 
     def getPawns(self): return self._pawns
-    def getMovingPawn(self): return self._pawns[self._turn]
-    def getAdPawn(self): return self._pawns[(self._turn+1)%2]
+    def getMovingPawn(self): return self._pawns[self.getTurnIdx()]
+    def getOpponentPawn(self): return self._pawns[(self.getTurnIdx()+1)%2]
     def movePawn(self,p):
         if p in self.getPossibleNextMoves():
             self.getMovingPawn().setPosition(p)
@@ -152,12 +175,22 @@ class Board():
             if p.getColor()==color:
                 return p
 
-    def getTurn(self):return self._turn
-    def incrementTurn(self):
-        self._turn=(self._turn+1)%len(self._pawns)
+    def getTurn(self): return self._turn
+    def getTurnIdx(self):return self._turn%len(self._pawns)
+    def incrementTurn(self): self._turn+=1
+    def decrementTurn(self):self._turn-=1
 
-    def decrementTurn(self):
-        self._turn=self._turn-1 if self._turn>0 else len(self._pawns)-1
+    def reset(self):
+        self._hwalls=[[0 for i in range(self._dim-1)] for j in range(self._dim-1)]
+        self._vwalls=[[0 for i in range(self._dim-1)] for j in range(self._dim-1)]
+    
+        self._graph=GridGraph(self._dim)
+        for p in self._pawns:
+            p.reset()
+        self._turn=0
+    
+    def isTerminal(self):
+        return [p for p in self._pawns if p.getPosition()[0]==p.getGoalRow()]
 
     def checkWinner(self):
         win=[p for p in self._pawns if p.getPosition()[0]==p.getGoalRow()]

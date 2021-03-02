@@ -188,9 +188,6 @@ class DummyAgent0():
 #then behaves as dummy agent 0.
 #Walls are placed evaluating the board heuristic
 class DummyAgent1(DummyAgent0):
-    def __init__(self,env):
-        self._env=env
-        self._epsilon=0.1
 
     def takeAction(self):
         p=self._env.getMovingPawn()
@@ -213,4 +210,7 @@ class DummyAgent1(DummyAgent0):
             self._env.update(best_slot[0])
         else:
             super().takeAction()
+
+class StrategyAgent0(DummyAgent1):
+    def takeAction(self):pass
 

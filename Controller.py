@@ -7,58 +7,63 @@ import time
 
 
 class Controller():
-    def __init__(self):
-        self._model=env.Env(5,[model.Pawn("white",(0,2),4,3),model.Pawn("black",(4,2),0,3)])
+    def __init__(self,model=None,players=None):
+        if model is None:
+            self._model=env.Env1(5,[model.Pawn("white",(0,2),4,3),model.Pawn("black",(4,2),0,3)])
+        else:
+            self._model=model
         self._view=view.View(self._model)
-        self._players=[Human(self),Human(self)]
+
+        if players is None:
+            self._players=[Human(self),Human(self)]
+        else:
+            self._players=players
         self._running=False
 
 
     def quit(self): self._running=False
 
-    def game_loop(self,players=None):
+    def game_loop(self):
         
-        turn_count=0
-        if players!=None:
-            self._players=[p for p in players]
         self._running=True
 
         while self._running:
             while not self._model.checkWinner() and self._running:
 
                 self._view.render()
-                self._players[self._model.getTurn()].takeAction()
+                self._players[self._model.getTurnIdx()].takeAction()
 
-                if type(self._players[self._model.getTurn()])!=Human:
+                if type(self._players[self._model.getTurnIdx()])!=Human:
                     for e in pg.event.get():
                         if e.type==pg.QUIT:
                             self._running=False
-                
-                turn_count=turn_count+1
 
             if self._running:
                 winner=self._model.checkWinner().getColor()
                 for p in self._players:
                     if type(p)==RLAgent:
                         #Calling the last update is mandatory
-                        if p!=self._players[self._model.getTurn()]:
+                        if p!=self._players[self._model.getTurnIdx()]:
                             self._model.incrementTurn()
                         p.update()
+                turn_count=self._model.getTurn()
                 self._model.reset()
                 return winner,turn_count
         return False
             
+    def setPlayers(self,players):
+        self._players=[p for p in players]
 
     #Train an RLAgent
-    def train(self,RLplayer,adPlayer,color="white",n_match=200):
+    def train(self,RLplayer,opponentPlayer,color="white",n_match=200):
         win_count,lose_count=1,1
         #Win rate:[win_count/lose_count] at the iteration number i
         win_rate=[]
-        players=[RLplayer,adPlayer]
+        self.setPlayers([RLplayer,opponentPlayer])
         if color!="white":
             players=players[::-1]
         for i in range(n_match):
-            res=self.game_loop(players)
+            res=self.game_loop()
             #The game was quitted, during the train
             if not res:
                 return False
