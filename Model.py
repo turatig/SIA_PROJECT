@@ -141,7 +141,7 @@ class Board():
     def getFreeWay(self,pawn):
         pos=pawn.getPosition()
         ways=[]
-        dirs=[(-1,0),(0,1),(0,-1),(1,0)]
+        dirs=[(-1,0),(1,0),(0,-1),(0,1)]
 
         for d in dirs:
             #Move along all directions till it's possible and count the squares

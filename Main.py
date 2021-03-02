@@ -30,6 +30,7 @@ def plotWinRate(win_rate,agent_str):
     ax.plot([i for i in range(len(win_rate))],win_rate)
 
 if __name__=="__main__":
-    main()
-    """ctrl=controller.Controller()
-    ctrl.game_loop()"""
+    """main()"""
+    ctrl=controller.Controller()
+    ctrl.setPlayers([RLAgent(ctrl._model),controller.Human(ctrl)])
+    ctrl.game_loop()
