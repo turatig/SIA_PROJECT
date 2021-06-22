@@ -9,7 +9,7 @@ import time
 class Controller():
     def __init__(self,mod=None,players=None):
         if mod is None:
-            self._model=env.Env1(5,[model.Pawn("white",(0,2),4,3),model.Pawn("black",(4,2),0,3)])
+            self._model=env.Env2(5,[model.Pawn("white",(0,2),4,3),model.Pawn("black",(4,2),0,3)])
         else:
             self._model=mod
         self._view=view.View(self._model)

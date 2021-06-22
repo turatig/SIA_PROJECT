@@ -113,7 +113,7 @@ class RLAgent():
                 
                 self._update(target)
 
-                
+    #update the state,action value table           
     def _update(self,target):
 
         delta=(target-self._qtable[self._prev_state][self._prev_act])
@@ -177,7 +177,7 @@ class DummyAgent0():
         valid=self._env.getPossibleNextMoves()
 
         #If the square is busy (there's opponent pawn on it) or with probability
-        #epsilon
+        #epsilon (randomized subotmital choice)
         if next_pos not in valid or uniform(0,0.99)<self._epsilon:
             next_pos=valid[int(uniform(0,0.99)*len(valid))]
         
@@ -211,6 +211,4 @@ class DummyAgent1(DummyAgent0):
         else:
             super().takeAction()
 
-class StrategyAgent0(DummyAgent1):
-    def takeAction(self):pass
 

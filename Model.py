@@ -67,6 +67,17 @@ class Board():
                     free["vertical"].append((i,j))
         return free
 
+    def getPlacedSlots(self):
+        full={"horizontal":[],"vertical":[]}
+
+        for i in range(len(self._hwalls)):
+            for j in range(len(self._hwalls[i])):
+                if self._hwalls[i][j]:
+                    full["horizontal"].append((i,j))
+                if self._vwalls[i][j]:
+                    full["vertical"].append((i,j))
+        return full["horizontal"]+full["vertical"]
+
     def insertWall(self,pos,color,verse):
         i,j=pos[0],pos[1]
             
@@ -111,7 +122,7 @@ class Board():
         for d in directions:
             p=(pos[0]+d[0],pos[1]+d[1])
             #If there's an opponent on the square
-            if self.getOpponentPawn().getPosition()==p:
+            if self._graph.areNeighbours(pos,p) and self.getOpponentPawn().getPosition()==p:
                 #If there's no wall behind the opponent
                 if self._graph.areNeighbours(p,(p[0]+d[0],p[1]+d[1])):
                     jumps.append((p[0]+d[0],p[1]+d[1]))

@@ -6,11 +6,13 @@ from utils import GridGraph
 This class provides compact representation of the state and additional info for the rl agent.
 """
 class Env(Board):
-    def __init__(self,dim,pawnList,limit=10):
+    def __init__(self,dim,pawnList,limit=10,rw_type="win_match"):
         super().__init__(dim,pawnList)
         #size of cache for undo stages
         self._limit=limit
         self._cache=[]
+        #save the reward type
+        self._rewardType="win_match"
     
     def getHeuristic(self):
         p1=self.getMovingPawn()
@@ -23,6 +25,19 @@ class Env(Board):
             #Compute difference of shortest paths heuristics
             return len(self._graph.shortestPath(p2.getPosition(),p2.getGoalRow()))-\
                         len(self._graph.shortestPath(p1.getPosition(),p1.getGoalRow()))
+
+    def getWmHeuristic(self):
+        p1=self.getMovingPawn()
+        p2=self.getOpponentPawn()
+        
+        if self.isTerminal():
+            if p1.isWinner(): return 1000
+            else: return -1000
+        else: 0
+
+    def getReward(self):
+        reward_dict={"shortest_path": getHeuristic,"win_match":getWmHeuristic}
+        return self.reward_dict[self._rewardType]()
                         
     def update(self,action,breakp=False):
         pos=self.getMovingPawn().getPosition()
@@ -90,24 +105,15 @@ class Env1(Env):
 
         state[4:]=self.getFreeWay(pl[0])+self.getFreeWay(pl[1])  
 
-        print(state)
+        #print(state)
         return tuple(state)
 
-    # Action code: (m/h/v,(pos[0],pos[1]))
-    # (m,p): move the pawn to p
-    # (h/v,p): put wall in slot p
-    
-    def getReward(self):
-        p1=self.getMovingPawn()
-        p2=self.getOpponentPawn()
-        
-        if self.isTerminal():
-            if p1.isWinner(): return 1000
-            else: return -1000
-        else:
-            #Compute difference of shortest paths heuristics
-            return len(self._graph.shortestPath(p2.getPosition(),p2.getGoalRow()))-\
-                        len(self._graph.shortestPath(p1.getPosition(),p1.getGoalRow()))
+class Env2(Env):
+
+    #State(moving_pawn_pos,opponent_pawn_pos,[placed_walls])
+    def getState(self):
+        return tuple([self.getMovingPawn().getPosition(),self.getOpponentPawn().getPosition()]+\
+                        self.getPlacedSlots())
 
 
 
