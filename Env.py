@@ -12,7 +12,7 @@ class Env(Board):
         self._limit=limit
         self._cache=[]
         #save the reward type
-        self._rewardType="win_match"
+        self._rewardType=rw_type
     
     def getHeuristic(self):
         p1=self.getMovingPawn()
@@ -36,8 +36,8 @@ class Env(Board):
         else: 0
 
     def getReward(self):
-        reward_dict={"shortest_path": getHeuristic,"win_match":getWmHeuristic}
-        return self.reward_dict[self._rewardType]()
+        if self._rewardType=="win_matrch": return self.getWmHeuristic()
+        else: return self.getHeuristic()
                         
     def update(self,action,breakp=False):
         pos=self.getMovingPawn().getPosition()
