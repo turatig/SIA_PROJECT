@@ -166,14 +166,14 @@ class NegamaxAgent():
 #The dummy agent 0 moves only the pawn in the direction of the shortest
 #path
 class DummyAgent0():
-    def __init__(self,env):
+    def __init__(self,env,epsilon=0.1):
         self._env=env
-        self._epsilon=0.1
+        self._epsilon=epsilon
 
     def takeAction(self):
         p=self._env.getMovingPawn()
         #Take a step along the shortest path direction
-        next_pos=self._env._graph.shortestPath(p.getPosition(),p.getGoalRow())[1]
+        next_pos=self._env._graph.shortestPath(p.getPosition(),p.getGoalRow(),self._env.getPossibleJumps())[1]
         valid=self._env.getPossibleNextMoves()
 
         #If the square is busy (there's opponent pawn on it) or with probability

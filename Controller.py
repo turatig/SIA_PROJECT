@@ -31,6 +31,7 @@ class Controller():
             while not self._model.checkWinner() and self._running:
 
                 self._view.render()
+                print("Heuristic value for {0} player:{1}".format(self._model.getMovingPawn().getColor(),self._model.getHeuristic()))
                 self._players[self._model.getTurnIdx()].takeAction()
 
                 if type(self._players[self._model.getTurnIdx()])!=Human:

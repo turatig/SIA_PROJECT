@@ -24,7 +24,7 @@ class Env(Board):
         else:
             #Compute difference of shortest paths heuristics
             return len(self._graph.shortestPath(p2.getPosition(),p2.getGoalRow()))-\
-                        len(self._graph.shortestPath(p1.getPosition(),p1.getGoalRow()))
+                        len(self._graph.shortestPath(p1.getPosition(),p1.getGoalRow(),self.getPossibleJumps()))
 
     def getWmHeuristic(self):
         p1=self.getMovingPawn()
@@ -95,11 +95,12 @@ class Env1(Env):
     
     #State=(len_min_path,walls_left,n_sq_front,n_sq_back,n_sq_right,n_sq_left)*(pawn1,pawn2)
     def getState(self):
-        pl=self.getMovingPawn(),self.getOpponentPawn()
+        p,p2=self.getMovingPawn(),self.getOpponentPawn()
 
         #print(list([p.getColor() for p in pl]))
         state=[0 for i in range(12)]
-        state[:]=[len(self._graph.shortestPath(p.getPosition(),p.getGoalRow())) for p in pl]
+        state[0]=len(self._graph.shortestPath(p.getPosition(),p.getGoalRow()),self.getPossibleJumps())
+        state[1]=len(self._graph.shortestPath(p2.getPosition(),p2.getGoalRow()))
 
         state[2:]=[p.getWallsLeft() for p in pl]
 
