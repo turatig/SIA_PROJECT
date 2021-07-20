@@ -77,7 +77,8 @@ class RLAgent():
     def update(self):
 
         if self._env.isTerminal():
-            target=self._env.getReward()
+            #get reward from the environment
+            target=self._env.getHeuristic("won_match")
             self._update(target)
             if self._v:
                 print("-"*20+" FINAL UPDATE "+"-"*20)
@@ -109,7 +110,7 @@ class RLAgent():
                     print(new_state)   
                 #Select maximum value function between valid actions
                 qa_max=max([v for a,v in self._qtable[new_state].items() if a in valid])
-                target=self._env.getReward()+self._gamma*qa_max
+                target=self._env.getHeuristic("won_match")+self._gamma*qa_max
                 
                 self._update(target)
 
@@ -163,6 +164,53 @@ class NegamaxAgent():
 
         self._env.update(negaMax(self._depth)[1])
 
+class AlphabetaAgent():
+    def __init__(self,env,depth=2):
+        self._env=env
+        self._depth=depth
+
+    def takeAction(self):
+
+        #Return tuple (heuristic_value,move) for alpha-beta pruning algorithm
+        def alphaBeta(depth,alpha,beta):
+            if self._env.isTerminal() or not depth:
+                return (self._env.getHeuristic(),None)
+            else:
+                max_value=(-math.inf,None)
+
+                for a in self._env.getActions():
+                    #dist=len(self._env._graph.shortestPath(self._env.getMovingPawn().getPosition(),\
+                    #            self._env.getMovingPawn().getGoalRow()))
+                    self._env.update(a)
+                    x=alphaBeta(depth-1,(-beta[0],beta[1]),(-alpha[0],alpha[1]))
+
+                    #compute the new distance from the goal, after the move was taken
+                    #new_dist=len(self._env._graph.shortestPath(self._env.getOpponentPawn().getPosition(),\
+                    #            self._env.getOpponentPawn().getGoalRow()))
+                    if -x[0]>max_value[0]:
+                        max_value=(-x[0],a)
+
+                    #Tie breaking rule: selected move shouldn't push the pawn
+                    #further from its goal. Selct randomly between available options
+                    elif -x[0]==max_value[0] and uniform(0,1)>0.5:
+                        max_value=(-x[0],a)
+
+                    self._env.undo()
+                    if max_value[0]>alpha[0]:alpha=max_value
+                    if alpha[0]>=beta[0]: return alpha
+
+                return max_value
+
+        move=alphaBeta(self._depth,(-math.inf,None),(math.inf,None))
+        """comp=negaMax(self._depth)
+
+        if comp!=move:
+            print("-"*30)
+            print(comp)
+            print(move)
+            raise Exception()"""
+        self._env.update(move[1])
+
 #The dummy agent 0 moves only the pawn in the direction of the shortest
 #path
 class DummyAgent0():
@@ -173,7 +221,7 @@ class DummyAgent0():
     def takeAction(self):
         p=self._env.getMovingPawn()
         #Take a step along the shortest path direction
-        next_pos=self._env._graph.shortestPath(p.getPosition(),p.getGoalRow(),self._env.getPossibleJumps())[1]
+        next_pos=self._env._graph.shortestPath(p.getPosition(),p.getGoalRow())[1]
         valid=self._env.getPossibleNextMoves()
 
         #If the square is busy (there's opponent pawn on it) or with probability
@@ -200,7 +248,7 @@ class DummyAgent1(DummyAgent0):
                 for slot in free_slots[k]:
                     self._env.update((k[0],slot))
                     #The lower the better in this case (is evaluated during the adversarial turn)
-                    val=self._env.getHeuristic()
+                    val=self._env.getHeuristic("shortest_path_next_row")
                     if val<best_slot[1]:
                         best_slot=((k[0],slot),val)
                     elif val==best_slot[1]:

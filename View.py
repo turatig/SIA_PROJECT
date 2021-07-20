@@ -225,7 +225,7 @@ class View():
         for p in self._pawns:
             p.render()
         self.renderWallsLeft()
-        #pg.draw.rect(self._screen,pg.Color("Red"),self.undo_button)
+        pg.draw.rect(self._screen,pg.Color("Red"),self.undo_button)
         self._clock.tick(self._maxFps)
         pg.display.flip()
 

@@ -48,30 +48,21 @@ class GridGraph():
 
         return search(src)
 
-    #compute the Djikstra Algorithm ordering the by distance in row from goal row
-    def shortestPath(self,src,toRow,jumps=None):
-        if src[0]==toRow: return [src]
-
+    def shortestPath(self,src,toRow):
         visited=set()
-        queue=[]
         
-        visited.add(src)
-        #just to fix the case in which the moving pawn can jump
-        for node in self._adjDict[src]+jumps if jumps else self._adjDict[src]:
-            visited.add(node)
-                    
-            if node[0]==toRow: return [src]+[node]
-            queue.append([src]+[node])
-        queue.sort(key=lambda path: abs(path[-1][0]-toRow))
+        def search(node):
+            if node[0]==toRow: return [node]
+            else:
+                visited.add(node)
+                minPath=[]
+                for n in self._adjDict[node]:
+                    if n not in visited:
+                        res=search(n)
+                        if res and (not minPath or len(minPath)>=len(res)): 
+                            minPath=res
+                            
+                visited.remove(node)
+                return [node]+minPath if minPath else []
 
-        while queue:
-            path=queue.pop(0)
-            for node in self._adjDict[path[-1]]:
-                if node not in visited:
-                    visited.add(node)
-                    
-                    if node[0]==toRow: return path+[node]
-                    queue.append(path+[node])
-            queue.sort(key=lambda path: abs(path[-1][0]-toRow))
-
-        return None
+        return search(src)

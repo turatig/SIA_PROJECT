@@ -6,26 +6,15 @@ from utils import GridGraph
 This class provides compact representation of the state and additional info for the rl agent.
 """
 class Env(Board):
-    def __init__(self,dim,pawnList,limit=10,rw_type="win_match"):
+    def __init__(self,dim,pawnList,limit=10):
         super().__init__(dim,pawnList)
         #size of cache for undo stages
         self._limit=limit
         self._cache=[]
-        #save the reward type
-        self._rewardType=rw_type
-    
-    def getHeuristic(self):
-        p1=self.getMovingPawn()
-        p2=self.getOpponentPawn()
-        
-        if self.isTerminal():
-            if p1.isWinner(): return 1000
-            else: return -1000
-        else:
-            #Compute difference of shortest paths heuristics
-            return len(self._graph.shortestPath(p2.getPosition(),p2.getGoalRow()))-\
-                        len(self._graph.shortestPath(p1.getPosition(),p1.getGoalRow(),self.getPossibleJumps()))
 
+    #won match heuristic.
+    #+/- 1000 for terminal state
+    #0 for others
     def getWmHeuristic(self):
         p1=self.getMovingPawn()
         p2=self.getOpponentPawn()
@@ -34,10 +23,46 @@ class Env(Board):
             if p1.isWinner(): return 1000
             else: return -1000
         else: 0
+    
+    #shortest path heuristic.
+    #+/- 1000 for terminal state
+    #difference of shortest paths length to the goal row for the others
+    def getSpHeuristic(self):
+        
+        if self.isTerminal(): self.getWmHeuristic()
+        else:
+            p1=self.getMovingPawn()
+            p2=self.getOpponentPawn()
+            #Compute difference of shortest paths heuristics
+            return len(self._graph.shortestPath(p2.getPosition(),p2.getGoalRow()))-\
+                        len(self._graph.shortestPath(p1.getPosition(),p1.getGoalRow()))
+    
+    #shortest path heuristic.
+    #+/- 1000 for terminal state
+    #difference of shortest paths length to the goal row+ normalized difference of shortest paths length to the next row for others
+    def getNrHeuristic(self):
+        if self.isTerminal(): self.getWmHeuristic()
+        else:
+            p1=self.getMovingPawn()
+            p2=self.getOpponentPawn()
+            
+            sp=self.getSpHeuristic()
+            directions=(1 if p2.getGoalRow()!=0 else -1,\
+                        1 if p1.getGoalRow()!=0 else -1)
+            nr=len(self._graph.shortestPath(p2.getPosition(),p2.getPosition()[0]+directions[0]))-\
+                        len(self._graph.shortestPath(p1.getPosition(),p1.getPosition()[0]+directions[1]))
+            #1/(self.dim**2) factor to have value between 0 and +/-1
+            return sp+nr/(self._dim**2)
+    
+    #statically evaluate the board state
+    #h_type select the type of heuristic used
+    def getHeuristic(self,h_type="won_match"):
 
-    def getReward(self):
-        if self._rewardType=="win_matrch": return self.getWmHeuristic()
-        else: return self.getHeuristic()
+        f_dict={"won_match": lambda :self.getWmHeuristic(),
+                "shortest_path": lambda :self.getSpHeuristic(),
+                "shortest_path_next_row": lambda :self.getNrHeuristic()}
+        
+        return f_dict[h_type]()
                         
     def update(self,action,breakp=False):
         pos=self.getMovingPawn().getPosition()

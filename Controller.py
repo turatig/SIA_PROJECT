@@ -89,36 +89,37 @@ class Human():
         moved=False
         running=True
 
+        print(self._model._graph.shortestPath(self._model.getMovingPawn().getPosition(),\
+                self._model.getMovingPawn().getGoalRow()))
         while(running and not moved):
-                for e in pg.event.get():
-
-                    if e.type==pg.MOUSEMOTION:
-                        self._view.getBoard().clear()
-                        el=self._view.getBoard().getElementByPos(pg.mouse.get_pos())
-                        if el: 
-                            el.highlight()
-                            self._view.render()
-                    if e.type==pg.MOUSEBUTTONUP:
-                        """if self._view.undo_button.collidepoint(pg.mouse.get_pos()):
-                            self._model.undo()
-                            self._view.render()"""
-                        el=self._view.getBoard().getElementByPos(pg.mouse.get_pos())
-                        if el:
-                            if type(el)==view.Square:
-                                p=self._model.getMovingPawn().getPosition()
-                                p=(el.getIdx()[0]-p[0],el.getIdx()[1]-p[1])
-                                moved=self._model.update(("m",p))
+            for e in pg.event.get():
+                if e.type==pg.MOUSEMOTION:
+                    self._view.getBoard().clear()
+                    el=self._view.getBoard().getElementByPos(pg.mouse.get_pos())
+                    if el: 
+                        el.highlight()
+                        self._view.render()
+                if e.type==pg.MOUSEBUTTONUP:
+                    if self._view.undo_button.collidepoint(pg.mouse.get_pos()):
+                        self._model.undo()
+                        self._view.render()
+                    el=self._view.getBoard().getElementByPos(pg.mouse.get_pos())
+                    if el:
+                        if type(el)==view.Square:
+                            p=self._model.getMovingPawn().getPosition()
+                            p=(el.getIdx()[0]-p[0],el.getIdx()[1]-p[1])
+                            moved=self._model.update(("m",p))
                                     
-                            elif type(el)==view.Wall:
-                                slot=el.getIdx()
-                                code="h" if el.getVerse()=="horizontal" else "v"
-                                moved=self._model.update((code,slot))
+                        elif type(el)==view.Wall:
+                            slot=el.getIdx()
+                            code="h" if el.getVerse()=="horizontal" else "v"
+                            moved=self._model.update((code,slot))
                             
-                            if moved:
-                                self._view.getBoard().clear()
+                        if moved:
+                            self._view.getBoard().clear()
 
 
-                    if e.type==pg.QUIT:
-                        self._game_controller.quit()
-                        running=False
-                        pg.event.clear()
+                if e.type==pg.QUIT:
+                    self._game_controller.quit()
+                    running=False
+                    pg.event.clear()
