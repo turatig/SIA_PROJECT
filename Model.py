@@ -191,6 +191,12 @@ class Board():
     def incrementTurn(self): self._turn+=1
     def decrementTurn(self):self._turn-=1
 
+    #return a list the list of horizontal and vertical wall slots
+    #1=slot_busy, 0=slot_free
+    def getWallsMap(self):
+        return [0 if not self._hwalls[i][j] else 1 for i in range(len(self._hwalls)) for j in range(len(self._hwalls[i]))]+\
+                [0 if not self._vwalls[i][j] else 1 for i in range(len(self._vwalls)) for j in range(len(self._vwalls[i]))]
+
     def reset(self):
         self._hwalls=[[0 for i in range(self._dim-1)] for j in range(self._dim-1)]
         self._vwalls=[[0 for i in range(self._dim-1)] for j in range(self._dim-1)]

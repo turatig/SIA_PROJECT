@@ -146,7 +146,7 @@ class NegamaxAgent():
         #Return tuple (heuristic_value,move) for negamax algorithm
         def negaMax(depth):
             if self._env.isTerminal() or not depth:
-                return (self._env.getHeuristic(),None)
+                return (self._env.getHeuristic("shortest_path_next_row"),None)
             else:
                 max_value=(-math.inf,None)
     
@@ -174,24 +174,17 @@ class AlphabetaAgent():
         #Return tuple (heuristic_value,move) for alpha-beta pruning algorithm
         def alphaBeta(depth,alpha,beta):
             if self._env.isTerminal() or not depth:
-                return (self._env.getHeuristic(),None)
+                return (self._env.getHeuristic("shortest_path_next_row"),None)
             else:
                 max_value=(-math.inf,None)
 
                 for a in self._env.getActions():
-                    #dist=len(self._env._graph.shortestPath(self._env.getMovingPawn().getPosition(),\
-                    #            self._env.getMovingPawn().getGoalRow()))
                     self._env.update(a)
                     x=alphaBeta(depth-1,(-beta[0],beta[1]),(-alpha[0],alpha[1]))
 
-                    #compute the new distance from the goal, after the move was taken
-                    #new_dist=len(self._env._graph.shortestPath(self._env.getOpponentPawn().getPosition(),\
-                    #            self._env.getOpponentPawn().getGoalRow()))
                     if -x[0]>max_value[0]:
                         max_value=(-x[0],a)
 
-                    #Tie breaking rule: selected move shouldn't push the pawn
-                    #further from its goal. Selct randomly between available options
                     elif -x[0]==max_value[0] and uniform(0,1)>0.5:
                         max_value=(-x[0],a)
 
@@ -202,13 +195,6 @@ class AlphabetaAgent():
                 return max_value
 
         move=alphaBeta(self._depth,(-math.inf,None),(math.inf,None))
-        """comp=negaMax(self._depth)
-
-        if comp!=move:
-            print("-"*30)
-            print(comp)
-            print(move)
-            raise Exception()"""
         self._env.update(move[1])
 
 #The dummy agent 0 moves only the pawn in the direction of the shortest
@@ -218,7 +204,9 @@ class DummyAgent0():
         self._env=env
         self._epsilon=epsilon
 
-    def takeAction(self):
+    #step on the shortest path to goal with prob=1-epsilon
+    #random step with prob=epsilon 
+    def takeOptimalStep(self):
         p=self._env.getMovingPawn()
         #Take a step along the shortest path direction
         next_pos=self._env._graph.shortestPath(p.getPosition(),p.getGoalRow())[1]
@@ -226,37 +214,47 @@ class DummyAgent0():
 
         #If the square is busy (there's opponent pawn on it) or with probability
         #epsilon (randomized subotmital choice)
-        if next_pos not in valid or uniform(0,0.99)<self._epsilon:
+        if uniform(0,0.99)<self._epsilon:
             next_pos=valid[int(uniform(0,0.99)*len(valid))]
         
         p=p.getPosition()
         self._env.update(("m",(next_pos[0]-p[0],next_pos[1]-p[1])))
 
+    def takeAction(self): self.takeOptimalStep()
+
 #The dummy agent 1 waste all walls at the beginning of the match
 #then behaves as dummy agent 0.
-#Walls are placed evaluating the board heuristic
+#Walls are placed by evaluating the board heuristic
 class DummyAgent1(DummyAgent0):
 
+    def placeOptimalWall(self):
+        free_slots=self._env.getFreeSlots()
+        best_slot=(None,math.inf)
+        #free_slots["horizontal"],free_slots["vertical"]
+        for k in free_slots.keys():
+            for slot in free_slots[k]:
+                #k[0] is action code "h/w" ("horizontal/vertical")
+                self._env.update((k[0],slot))
+                #The lower the better in this case (is evaluated during the adversarial turn)
+                val=self._env.getHeuristic("shortest_path_next_row")
+                if val<best_slot[1]:
+                    best_slot=((k[0],slot),val)
+                elif val==best_slot[1]:
+                    if uniform(0,0.99)<0.5:
+                        best_slot=((k[0],slot),val)
+                self._env.undo()
+        if uniform(0,0.99)< self._epsilon:
+            wall_moves=[a for a in self._env.getActions() if a[0] in {"h","w"}]
+            self._env.update(wall_moves[int(uniform(0,0.99)*len(wall_moves))])
+        else:
+            self._env.update(best_slot[0])
+        
     def takeAction(self):
         p=self._env.getMovingPawn()
 
         if p.getWallsLeft():
-            free_slots=self._env.getFreeSlots()
-            best_slot=(None,math.inf)
-            #free_slots["horizontal"],free_slots["vertical"]
-            for k in free_slots.keys():
-                for slot in free_slots[k]:
-                    self._env.update((k[0],slot))
-                    #The lower the better in this case (is evaluated during the adversarial turn)
-                    val=self._env.getHeuristic("shortest_path_next_row")
-                    if val<best_slot[1]:
-                        best_slot=((k[0],slot),val)
-                    elif val==best_slot[1]:
-                        if uniform(0,0.99)<0.5:
-                            best_slot=((k[0],slot),val)
-                    self._env.undo()
-            self._env.update(best_slot[0])
+            self.placeOptimalWall()
         else:
-            super().takeAction()
+            self.takeOptimalStep()
 
 

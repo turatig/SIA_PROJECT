@@ -31,7 +31,8 @@ class Controller():
             while not self._model.checkWinner() and self._running:
 
                 self._view.render()
-                print("Heuristic value for {0} player:{1}".format(self._model.getMovingPawn().getColor(),self._model.getHeuristic()))
+                #print("Heuristic value for {0} player:{1}".format(self._model.getMovingPawn().getColor(),self._model.getHeuristic("won_match")))
+                print("State repr:\n{0}".format(self._model.getState()))
                 self._players[self._model.getTurnIdx()].takeAction()
 
                 if type(self._players[self._model.getTurnIdx()])!=Human:
@@ -100,9 +101,9 @@ class Human():
                         el.highlight()
                         self._view.render()
                 if e.type==pg.MOUSEBUTTONUP:
-                    if self._view.undo_button.collidepoint(pg.mouse.get_pos()):
+                    """if self._view.undo_button.collidepoint(pg.mouse.get_pos()):
                         self._model.undo()
-                        self._view.render()
+                        self._view.render()"""
                     el=self._view.getBoard().getElementByPos(pg.mouse.get_pos())
                     if el:
                         if type(el)==view.Square:

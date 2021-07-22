@@ -8,13 +8,13 @@ def main():
     ctrl=controller.Controller()
     agent=RLAgent(ctrl._model,with_trace=True)
 
-    win_rate=ctrl.train(agent,DummyAgent1(ctrl._model),n_match=1000)
+    win_rate=ctrl.train(agent,DummyAgent0(ctrl._model),n_match=1000)
     plotWinRate(win_rate,"DummyAgent1")
 
     win_rate=ctrl.train(agent,DummyAgent1(ctrl._model),n_match=1000)
     plotWinRate(win_rate,"DummyAgent1")
 
-    win_rate=ctrl.train(agent,NegamaxAgent(ctrl._model),n_match=2000)
+    win_rate=ctrl.train(agent,AlphabetaAgent(ctrl._model,3),n_match=2000)
     plotWinRate(win_rate,"NegaMaxAgent")
 
     plt.show()
@@ -32,5 +32,5 @@ def plotWinRate(win_rate,agent_str):
 if __name__=="__main__":
     #main()
     ctrl=controller.Controller()
-    ctrl.setPlayers([controller.Human(ctrl),DummyAgent1(ctrl._model)])
+    ctrl.setPlayers([controller.Human(ctrl),AlphabetaAgent(ctrl._model)])
     ctrl.game_loop()

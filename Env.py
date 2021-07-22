@@ -22,7 +22,7 @@ class Env(Board):
         if self.isTerminal():
             if p1.isWinner(): return 1000
             else: return -1000
-        else: 0
+        else: return 0
     
     #shortest path heuristic.
     #+/- 1000 for terminal state
@@ -83,6 +83,9 @@ class Env(Board):
                 input()
                 print(self._cache)
             self.incrementTurn()
+            #set temporary edges
+            jumps=self.getPossibleJumps()
+            self._graph.setTmpEdges(self.getMovingPawn().getPosition(),jumps)
             return True
 
         return False
@@ -103,6 +106,8 @@ class Env(Board):
         pos=self.getMovingPawn().getPosition()
         decoder[self._cache[-1][0]](self._cache[-1][1])
         self._cache.pop()
+        jumps=self.getPossibleJumps()
+        self._graph.setTmpEdges(self.getMovingPawn().getPosition(),jumps)
 
         return True
 
@@ -139,7 +144,8 @@ class Env2(Env):
     #State(moving_pawn_pos,opponent_pawn_pos,[placed_walls])
     def getState(self):
         return tuple([self.getMovingPawn().getPosition(),self.getOpponentPawn().getPosition()]+\
-                        self.getPlacedSlots())
+                        [self.getMovingPawn().getWallsLeft(),self.getOpponentPawn().getWallsLeft()]+\
+                            self.getWallsMap())
 
 
 

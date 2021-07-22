@@ -6,6 +6,8 @@ class GridGraph():
         self._dim=dim
         self._adjDict=dict()
         self.initadjDict()
+        #helper dict to keep temporary edge and partitions
+        self._tmp_edges=dict()
 
     def getDim(self): return self._dim
     def getadjDict(self): return self._adjDict
@@ -30,6 +32,10 @@ class GridGraph():
             return sq2 in self._adjDict[sq1]
         except KeyError as e:
             return False
+    
+    #set temporary edges from a source to a list of destination blocks
+    def setTmpEdges(self,src,dst_list):
+        self._tmp_edges={src: dst_list}
 
     def theresPath(self,src,toRow):
 
@@ -56,7 +62,7 @@ class GridGraph():
             else:
                 visited.add(node)
                 minPath=[]
-                for n in self._adjDict[node]:
+                for n in self._adjDict[node]+self._tmp_edges[node] if node in self._tmp_edges.keys() else self._adjDict[node]:
                     if n not in visited:
                         res=search(n)
                         if res and (not minPath or len(minPath)>=len(res)): 
