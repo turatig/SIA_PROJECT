@@ -1,3 +1,5 @@
+import heapq
+
 #Helper class used to compute depth-first algorithm to check whether there's a path to a goal row
 #from a given position
 #Represented as dict={(row,col):neighbours_list}. self._dim:dimension of the grid
@@ -54,7 +56,7 @@ class GridGraph():
 
         return search(src)
 
-    def shortestPath(self,src,toRow):
+    def shortestPath2(self,src,toRow):
         visited=set()
         
         def search(node):
@@ -72,3 +74,19 @@ class GridGraph():
                 return [node]+minPath if minPath else []
 
         return search(src)
+
+    #Dijkstra algorithm implementation
+    #paths cost: length_of_already_found_path+row_distance_from_goal_row
+    def shortestPath(self,src,toRow):
+        visited=set()
+        queue=[(abs(src[0]-toRow)+1,[src])]
+
+        while queue:
+            cost,path=heapq.heappop(queue)
+            #current node
+            n=path[-1]
+            if n[0]==toRow: return path
+            neigh=self._adjDict[n]+self._tmp_edges[n] if n in self._tmp_edges.keys() else self._adjDict[n]
+            for node in neigh:
+                heapq.heappush(queue,(abs(src[0]-toRow)+len(path)+1,path+[node]))
+        return None

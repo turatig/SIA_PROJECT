@@ -133,76 +133,13 @@ class RLAgent():
     def startEpisode(self):
         self._elegibility_trace=dict()
 
+#Super class which implements methods common to every agent that implements a deterministic policy
+class StrategyAgent():
 
-
-
-class NegamaxAgent():
-    def __init__(self,env,depth=2):
-        self._env=env
-        self._depth=depth
-
-    def takeAction(self):
-
-        #Return tuple (heuristic_value,move) for negamax algorithm
-        def negaMax(depth):
-            if self._env.isTerminal() or not depth:
-                return (self._env.getHeuristic("shortest_path_next_row"),None)
-            else:
-                max_value=(-math.inf,None)
-    
-                for a in self._env.getActions():
-                    self._env.update(a)
-                    x=negaMax(depth-1)
-                    if -x[0]>max_value[0]:
-                        max_value=(-x[0],a)
-                    #Choose random between actions that have same value
-                    elif -x[0]==max_value[0] and uniform(0,1)>0.5:
-                        max_value=(-x[0],a)
-
-                    self._env.undo()
-                return max_value
-
-        self._env.update(negaMax(self._depth)[1])
-
-class AlphabetaAgent():
-    def __init__(self,env,depth=2):
-        self._env=env
-        self._depth=depth
-
-    def takeAction(self):
-
-        #Return tuple (heuristic_value,move) for alpha-beta pruning algorithm
-        def alphaBeta(depth,alpha,beta):
-            if self._env.isTerminal() or not depth:
-                return (self._env.getHeuristic("shortest_path_next_row"),None)
-            else:
-                max_value=(-math.inf,None)
-
-                for a in self._env.getActions():
-                    self._env.update(a)
-                    x=alphaBeta(depth-1,(-beta[0],beta[1]),(-alpha[0],alpha[1]))
-
-                    if -x[0]>max_value[0]:
-                        max_value=(-x[0],a)
-
-                    elif -x[0]==max_value[0] and uniform(0,1)>0.5:
-                        max_value=(-x[0],a)
-
-                    self._env.undo()
-                    if max_value[0]>alpha[0]:alpha=max_value
-                    if alpha[0]>=beta[0]: return alpha
-
-                return max_value
-
-        move=alphaBeta(self._depth,(-math.inf,None),(math.inf,None))
-        self._env.update(move[1])
-
-#The dummy agent 0 moves only the pawn in the direction of the shortest
-#path
-class DummyAgent0():
-    def __init__(self,env,epsilon=0.1):
+    def __init__(self,env,epsilon=0.1,h_type="shortest_path_next_row"):
         self._env=env
         self._epsilon=epsilon
+        self._h_type=h_type
 
     #step on the shortest path to goal with prob=1-epsilon
     #random step with prob=epsilon 
@@ -219,14 +156,7 @@ class DummyAgent0():
         
         p=p.getPosition()
         self._env.update(("m",(next_pos[0]-p[0],next_pos[1]-p[1])))
-
-    def takeAction(self): self.takeOptimalStep()
-
-#The dummy agent 1 waste all walls at the beginning of the match
-#then behaves as dummy agent 0.
-#Walls are placed by evaluating the board heuristic
-class DummyAgent1(DummyAgent0):
-
+    
     def placeOptimalWall(self):
         free_slots=self._env.getFreeSlots()
         best_slot=(None,math.inf)
@@ -236,7 +166,7 @@ class DummyAgent1(DummyAgent0):
                 #k[0] is action code "h/w" ("horizontal/vertical")
                 self._env.update((k[0],slot))
                 #The lower the better in this case (is evaluated during the adversarial turn)
-                val=self._env.getHeuristic("shortest_path_next_row")
+                val=self._env.getHeuristic(self._h_type)
                 if val<best_slot[1]:
                     best_slot=((k[0],slot),val)
                 elif val==best_slot[1]:
@@ -248,6 +178,17 @@ class DummyAgent1(DummyAgent0):
             self._env.update(wall_moves[int(uniform(0,0.99)*len(wall_moves))])
         else:
             self._env.update(best_slot[0])
+
+#The dummy agent 0 moves only the pawn in the direction of the shortest
+#path
+class DummyAgent0(StrategyAgent):
+
+    def takeAction(self): self.takeOptimalStep()
+
+#The dummy agent 1 waste all walls at the beginning of the match
+#then behaves as dummy agent 0.
+#Walls are placed by evaluating the board heuristic
+class DummyAgent1(StrategyAgent):
         
     def takeAction(self):
         p=self._env.getMovingPawn()
@@ -256,5 +197,83 @@ class DummyAgent1(DummyAgent0):
             self.placeOptimalWall()
         else:
             self.takeOptimalStep()
+
+
+class NegamaxAgent(StrategyAgent):
+    def __init__(self,env,depth=2,h_type="shortest_path_next_row"):
+        self._depth=depth
+        super().__init__(env,0,h_type)
+
+    def takeAction(self):
+
+        #Return tuple (heuristic_value,move) for negamax algorithm
+        def negaMax(depth):
+            if self._env.isTerminal() or not depth:
+                return (self._env.getHeuristic(self._h_type),None)
+            else:
+                max_value=(-math.inf,None)
+    
+                for a in self._env.getActions():
+                    self._env.update(a)
+                    x=negaMax(depth-1)
+                    if -x[0]>max_value[0]:
+                        max_value=(-x[0],a)
+                    #Choose random between actions that have same value
+                    elif -x[0]==max_value[0] and uniform(0,1)>0.5:
+                        max_value=(-x[0],a)
+
+                    self._env.undo()
+                return max_value
+        
+        if self._env.getMovingPawn().getWallsLeft():
+            self._env.update(negaMax(self._depth)[1])
+        else:
+            self.takeOptimalStep()
+
+class AlphabetaAgent(StrategyAgent):
+    def __init__(self,env,depth=3,h_type="shortest_path_next_row"):
+        self._depth=depth
+        super().__init__(env,0,h_type)
+
+    def takeAction(self):
+
+        #Return tuple (heuristic_value,move) for alpha-beta pruning algorithm
+        #max_p: this attribute is only used to complement or not the static evaluation
+        #at the leaves according to the 
+        def alphaBeta(depth,alpha,beta):
+            if self._env.isTerminal() or not depth:
+                heur=self._env.getHeuristic(self._h_type)
+                """print("Traceback:")
+                for i in range(self._depth):
+                    print("-"*i+" {0}".format(self._env._cache[-(i+1)]))
+                print("Heuristic value {0} color {1}".format(heur,self._env.getMovingPawn().getColor()))"""
+                return (heur,None)
+            else:
+                max_value=(-math.inf,None)
+
+                #for a in sorted(self._env.getActions(),reverse=True,key=lambda move: self._env.evalAction(move,self._h_type)):
+                for a in self._env.getActions():
+                    self._env.update(a)
+                    x=alphaBeta(depth-1,(-beta[0],beta[1]),(-alpha[0],alpha[1]))
+                    
+                    if -x[0]>max_value[0]:
+                        max_value=(-x[0],a)
+
+                    elif -x[0]==max_value[0] and uniform(0,1)>0.5:
+                        max_value=(-x[0],a)
+
+                    self._env.undo()
+                    if max_value[0]>alpha[0]:alpha=max_value
+                    if alpha[0]>=beta[0]: return alpha
+
+                return max_value
+
+        if self._env.getMovingPawn().getWallsLeft():
+            move=alphaBeta(self._depth,(-math.inf,None),(math.inf,None))[1]
+            """print("Move chosen {0}".format(move))"""
+            self._env.update(move)
+        else:
+            move=self.takeOptimalStep()
+
 
 

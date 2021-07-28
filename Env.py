@@ -18,7 +18,7 @@ class Env(Board):
     def getWmHeuristic(self):
         p1=self.getMovingPawn()
         p2=self.getOpponentPawn()
-        
+
         if self.isTerminal():
             if p1.isWinner(): return 1000
             else: return -1000
@@ -29,10 +29,11 @@ class Env(Board):
     #difference of shortest paths length to the goal row for the others
     def getSpHeuristic(self):
         
-        if self.isTerminal(): self.getWmHeuristic()
+        if self.isTerminal(): return self.getWmHeuristic()
         else:
             p1=self.getMovingPawn()
             p2=self.getOpponentPawn()
+
             #Compute difference of shortest paths heuristics
             return len(self._graph.shortestPath(p2.getPosition(),p2.getGoalRow()))-\
                         len(self._graph.shortestPath(p1.getPosition(),p1.getGoalRow()))
@@ -41,7 +42,7 @@ class Env(Board):
     #+/- 1000 for terminal state
     #difference of shortest paths length to the goal row+ normalized difference of shortest paths length to the next row for others
     def getNrHeuristic(self):
-        if self.isTerminal(): self.getWmHeuristic()
+        if self.isTerminal(): return self.getWmHeuristic()
         else:
             p1=self.getMovingPawn()
             p2=self.getOpponentPawn()
@@ -76,12 +77,7 @@ class Env(Board):
         if decoder[action[0]](action[1]):
             self._cache.append(action)
             if len(self._cache)>self._limit: self._cache.pop(0)
-            #TODO: togliere prima della consegna
-            if breakp:
-                print(self.getMovingPawn().getColor())
-                print("Updating board with action {0}".format(action))
-                input()
-                print(self._cache)
+            
             self.incrementTurn()
             #set temporary edges
             jumps=self.getPossibleJumps()
@@ -98,10 +94,7 @@ class Env(Board):
             "h":lambda a: self.removeWall(a,self.getMovingPawn().getColor(),"horizontal"),
             "v":lambda a: self.removeWall(a,self.getMovingPawn().getColor(),"vertical")
         }
-        #TODO: togliere prima della consegna
-        if breakp:
-            print("Undoing action {0}".format(self._cache[-1]))
-            input()
+    
         self.decrementTurn()
         pos=self.getMovingPawn().getPosition()
         decoder[self._cache[-1][0]](self._cache[-1][1])

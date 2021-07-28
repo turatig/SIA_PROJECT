@@ -7,7 +7,7 @@ import time
 
 
 class Controller():
-    def __init__(self,mod=None,players=None):
+    def __init__(self,mod=None,players=None,log=False):
         if mod is None:
             self._model=env.Env2(5,[model.Pawn("white",(0,2),4,3),model.Pawn("black",(4,2),0,3)])
         else:
@@ -18,6 +18,7 @@ class Controller():
             self._players=[Human(self),Human(self)]
         else:
             self._players=players
+        self._log=log
         self._running=False
 
 
@@ -31,8 +32,13 @@ class Controller():
             while not self._model.checkWinner() and self._running:
 
                 self._view.render()
-                #print("Heuristic value for {0} player:{1}".format(self._model.getMovingPawn().getColor(),self._model.getHeuristic("won_match")))
-                print("State repr:\n{0}".format(self._model.getState()))
+                if self._log:
+                    print("Current player shortest path {0}".\
+                    format(self._model._graph.shortestPath(self._model.getMovingPawn().getPosition(),self._model.getMovingPawn().getGoalRow())))
+        
+                    print("Opponent player shortest path {0}".\
+                    format(self._model._graph.shortestPath(self._model.getOpponentPawn().getPosition(),self._model.getOpponentPawn().getGoalRow())))
+                    
                 self._players[self._model.getTurnIdx()].takeAction()
 
                 if type(self._players[self._model.getTurnIdx()])!=Human:
@@ -90,8 +96,6 @@ class Human():
         moved=False
         running=True
 
-        print(self._model._graph.shortestPath(self._model.getMovingPawn().getPosition(),\
-                self._model.getMovingPawn().getGoalRow()))
         while(running and not moved):
             for e in pg.event.get():
                 if e.type==pg.MOUSEMOTION:

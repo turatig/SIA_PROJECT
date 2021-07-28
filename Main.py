@@ -32,5 +32,5 @@ def plotWinRate(win_rate,agent_str):
 if __name__=="__main__":
     #main()
     ctrl=controller.Controller()
-    ctrl.setPlayers([controller.Human(ctrl),AlphabetaAgent(ctrl._model)])
+    ctrl.setPlayers([controller.Human(ctrl),NegamaxAgent(ctrl._model)])
     ctrl.game_loop()
